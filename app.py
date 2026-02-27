@@ -41,8 +41,10 @@ def index(date):
     progress = int(done / total * 100) if total else 0
     return render_template('index.html', tasks=tasks, date=date, session_title=session_title, total=total, done=done, progress=progress, query=q)
 
-@app.route('/<date>/add', methods=('POST',))
+@app.route('/<date>/add', methods=('GET', 'POST'))
 def add(date):
+    if request.method != 'POST':
+        return redirect(url_for('index', date=date))
     content = request.form.get('content', '').strip()
     if not content:
         return redirect(url_for('index', date=date))

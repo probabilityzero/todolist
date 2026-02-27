@@ -16,15 +16,19 @@
 <body>
     <div class="layout">
         <header class="topbar">
-            <div class="brand">
-                <h1>{{ session_title }}</h1>
-                <div class="date">{{ date }}</div>
+            <div class="left-controls">
+                <button id="help-btn" class="pill" onclick="toggleHelp()">Help</button>
             </div>
-            <div class="stats">
-                <div class="progress">
-                    <div class="bar" style="width: {{ progress }}%"></div>
+            <div class="brand">
+                <div class="nav">
+                    <button class="nav-btn" onclick="navigate(-1)">◀</button>
+                    <div class="date-display">{{ date }}</div>
+                    <button class="nav-btn" onclick="navigate(1)">▶</button>
                 </div>
-                <div class="counts">{{ done }} / {{ total }} done</div>
+                <div class="title">{{ session_title }}</div>
+            </div>
+            <div class="right-controls">
+                <button class="pill" type="date" value="{{ date }}" onchange="pickDate(this.value)">Calendar</button>
             </div>
         </header>
         <main>
@@ -42,12 +46,18 @@
                         <option value="3">Low</option>
                     </select>
                     <input type="text" name="category" placeholder="Category">
-                    <input type="text" name="tags" placeholder="Tags (comma-separated)">
-                    <input type="text" name="notes" placeholder="Short notes">
+                    <input type="text" name="tags" placeholder="Tags">
+                    <input type="text" name="notes" placeholder="Notes">
                     <button type="submit">Add</button>
                 </form>
             </section>
             <section class="tasks">
+                <div class="stats">
+                    <div class="progress">
+                        <div class="bar" style="width: {{ progress }}%"></div>
+                    </div>
+                    <div class="counts">{{ done }} / {{ total }}</div>
+                </div>
                 <ul>
                     {% for task in tasks %}
                         <li class="task {% if task.completed %}done{% endif %}">
@@ -88,25 +98,43 @@
                     {% endfor %}
                 </ul>
             </section>
-            <aside class="learn">
-                <h2>How this works</h2>
-                <p>Use the add form to set a task, optional due time, priority, category and tags.</p>
-                <p>Click the circle to mark done. Use edit to change details. Search matches content, category and tags.</p>
-                <h3>Fields</h3>
+            <div id="help-popover" class="popover" style="display:none">
+                <h3>How this works</h3>
+                <p>Use the add form to set a task, optional due time, priority, category and tags. Click the circle to mark done. Use edit to change details. Search matches content, category and tags.</p>
+                <h4>Fields</h4>
                 <ul>
                     <li><strong>Priority</strong>: 1 high, 2 normal, 3 low</li>
                     <li><strong>Due time</strong>: local date and time</li>
                     <li><strong>Tags</strong>: comma-separated keywords</li>
                 </ul>
-                <h3>Tips</h3>
-                <ul>
-                    <li>Focus on high-priority tasks first</li>
-                    <li>Use categories for different projects</li>
-                    <li>Keep notes short and actionable</li>
-                </ul>
-            </aside>
+            </div>
+            <div id="calendar-overlay" class="calendar" style="display:none">
+                <input type="date" id="calendar-input" value="{{ date }}" onchange="pickDate(this.value)">
+                <button onclick="toggleCalendar()">Close</button>
+            </div>
         </main>
-        <footer class="footer">Built to learn: tasks are stored locally in SQLite</footer>
     </div>
+    <script>
+        function navigate(delta){
+            var d = new Date('{{ date }}');
+            d.setDate(d.getDate() + delta);
+            var yyyy = d.getFullYear();
+            var mm = (d.getMonth()+1).toString().padStart(2,'0');
+            var dd = d.getDate().toString().padStart(2,'0');
+            window.location.href = '/' + yyyy + '-' + mm + '-' + dd;
+        }
+        function pickDate(val){
+            if(!val) return;
+            window.location.href = '/' + val;
+        }
+        function toggleHelp(){
+            var p = document.getElementById('help-popover');
+            p.style.display = (p.style.display === 'block') ? 'none' : 'block';
+        }
+        function toggleCalendar(){
+            var c = document.getElementById('calendar-overlay');
+            c.style.display = (c.style.display === 'block') ? 'none' : 'block';
+        }
+    </script>
 </body>
 </html>

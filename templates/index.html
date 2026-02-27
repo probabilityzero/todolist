@@ -38,15 +38,14 @@
         .bar:nth-child(9) { height: 25px; animation-delay: 0.1s; }
         .bar:nth-child(10) { height: 10px; animation-delay: 0.3s; }
         @keyframes wave { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(2.5); } }
-        .search-bar { display: flex; gap: 10px; margin-bottom: 20px; margin-top: 240px;}
-        .search-bar input { flex-grow: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(0,0,0,0.1); padding: 12px 15px; border-radius: 8px; font-family: inherit; font-size: 0.9rem; color: #2c3e50; transition: all 0.3s; }
-        .search-bar input:focus { border-color: #aab7b8; box-shadow: 0 0 0 3px rgba(170,183,184,0.2); }
+        .search-bar { display: flex; background: rgba(255,255,255,0.1); border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); gap: 10px; margin-bottom: 20px; margin-top: 240px;}
+        .search-bar input { flex-grow: 1; padding: 12px 15px; font-family: inherit; font-size: 0.9rem; color: #2c3e50; transition: all 0.3s; }
         .stats { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
         .progress { height: 12px; border: 2px solid #fff; background: #e0e0e0; border-radius: 2px; overflow: hidden; flex: 1; }
         .bar-load { height: 100%; background: linear-gradient(90deg, #aab7b8, #2c3e50); transition: width 0.5s ease; }
         .counts { text-align: right; font-size: 0.8rem; color: var(--muted); font-family: 'Cinzel', serif; }
         ul { list-style: none; padding: 0; margin: 0; }
-        li.task { background: var(--card); backdrop-filter: blur(5px); margin-bottom: 12px; border-radius: 10px; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; position: relative; transition: all 0.3s; border: 1px solid rgba(255,255,255,0.06); }
+        li.task { background: var(--card); backdrop-filter: blur(5px); margin-bottom: 12px; border-radius: 10px; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; position: relative; transition: all 0.3s; z-index: 1; border: 1px solid rgba(255,255,255,0.06); }
         li.task:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.05); transform: translateX(1px); }
         li.task.done { opacity: 0.6; }
         li.task.done .content { text-decoration: line-through; color: #95a5a6; }
@@ -79,8 +78,8 @@
         .add-new-task:hover { border-color: #aab7b8; background: rgba(255,255,255,0.5); }
         .add-form { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        input, select { background: rgba(255,255,255,0.9); border: 1px solid #e0e0e0; padding: 12px 15px; border-radius: 8px; font-family: inherit; font-size: 0.9rem; color: #2c3e50; transition: all 0.3s; width: 100%; }
-        input:focus, select:focus { border-color: #aab7b8; box-shadow: 0 0 0 3px rgba(170,183,184,0.2); }
+        input, select { background: var(--panel); border: 1px solid rgba(0,0,0,0.08); padding: 12px 15px; border-radius: 8px; font-family: inherit; font-size: 0.9rem; color: var(--text); transition: all 0.3s; width: 100%; }
+        input:focus, select:focus { border-color: #aab7b8; box-shadow: 0 0 0 3px rgba(170,183,184,0.12); }
         .btn-add { background: #2c3e50; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 500; letter-spacing: 1px; transition: transform 0.2s, background 0.3s; text-transform: uppercase; font-size: 0.8rem; }
         .btn-add:hover { background: #34495e; transform: translateY(-1px); }
         .media-controls { display:flex; gap:8px; align-items:center; }
@@ -89,9 +88,9 @@
         .prio.p1 { background:#fdecea; color:#c0392b; }
         .prio.p2 { background:#eef3f6; color:#2c3e50; }
         .prio.p3 { background:#ecf9f1; color:#27ae60; }
-        .edit-panel { position: absolute; top: 0%; left: 0; bottom: 100%; width: 100%; background: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 20px; border-radius: 10px 10px 0 0; box-shadow: 0 10px 30px rgba(0,0,0,0.12); z-index: 2000; display: none; }
-        .edit-panel.active { display: block; }
-        .dark-theme .edit-panel{ background:#0f1720 }
+        .edit-panel { position: fixed; left: 0; top: 0; width: auto; min-width: 300px; max-width: 520px; background: var(--panel); border: 1px solid rgba(0,0,0,0.08); padding: 20px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.18); display: none; }
+        .edit-panel.active { display: block; z-index: 300000; }
+        .dark-theme .edit-panel{ border-color: rgba(255,255,255,0.04); }
         .dark-theme .widget-header{ color:var(--muted) }
         .dark-theme li.task{ border:1px solid rgba(255,255,255,0.03) }
         @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } .topbar { flex-wrap: wrap; gap: 10px; } .nav { order: -1; width: 100%; } }
@@ -150,6 +149,7 @@
                     <div class="progress"><div class="bar-load" style="width: {{ progress }}%"></div></div>
                     <div class="counts">完成度: {{ done }} / {{ total }}</div>
                 </div>
+
                 <ul>
                     {% for task in tasks %}
                         <li class="task {% if task.completed %}done{% endif %}">

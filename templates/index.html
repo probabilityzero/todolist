@@ -3,24 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To-Do List</title>
+    <title>Professional To-Do — {{ date }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta name="theme-color" content="#34495e">
+    <script>
+        function showEdit(id){
+            var el = document.getElementById('edit-'+id);
+            if(el.style.display === 'block') el.style.display = 'none'; else el.style.display = 'block';
+        }
+    </script>
 </head>
 <body>
-    <div class="container">
-        <h1>To-Do List</h1>
-        <form action="{{ url_for('add') }}" method="post">
-            <input type="text" name="content" placeholder="Enter a new task">
-            <input type="submit" value="Add">
-        </form>
-        <ul>
-            {% for task in tasks %}
-                <li>
-                    {{ task.content }}
-                    <a href="{{ url_for('delete', task_id=task.id) }}">Delete</a>
-                </li>
-            {% endfor %}
-        </ul>
+    <div class="layout">
+        <header class="topbar">
+            <div class="brand">
+                <h1>{{ session_title }}</h1>
+                <div class="date">{{ date }}</div>
+            </div>
+            <div class="stats">
+                <div class="progress">
+                    <div class="bar" style="width: {{ progress }}%"></div>
+                </div>
+                <div class="counts">{{ done }} / {{ total }} done</div>
+            </div>
+        </header>
+        <main>
+            <section class="controls">
+                <form class="search" method="get" action="{{ url_for('index', date=date) }}">
+                    <input type="search" name="q" placeholder="Search tasks, tags, categories" value="{{ query or '' }}">
+                    <button type="submit">Search</button>
+                </form>
+                <form class="add" method="post" action="{{ url_for('add', date=date) }}">
+                    <input type="text" name="content" placeholder="New task" required>
+                    <input type="datetime-local" name="due_time">
+                    <select name="priority">
+                        <option value="1">High</option>
+                        <option value="2" selected>Normal</option>
+                        <option value="3">Low</option>
+                    </select>
+                    <input type="text" name="category" placeholder="Category">
+                    <input type="text" name="tags" placeholder="Tags (comma-separated)">
+                    <input type="text" name="notes" placeholder="Short notes">
+                    <button type="submit">Add</button>
+                </form>
+            </section>
+            <section class="tasks">
+                <ul>
+                    {% for task in tasks %}
+                        <li class="task {% if task.completed %}done{% endif %}">
+                            <div class="left">
+                                <form method="post" action="{{ url_for('toggle', date=date, task_id=task.id) }}">
+                                    <button class="check" type="submit">{% if task.completed %}✓{% else %}○{% endif %}</button>
+                                </form>
+                                <div class="meta">
+                                    <div class="content">{{ task.content }}</div>
+                                    <div class="sub">{{ task.category }} {% if task.due_time %}• due {{ task.due_time }}{% endif %} {% if task.tags %}• {{ task.tags }}{% endif %}</div>
+                                </div>
+                            </div>
+                            <div class="right">
+                                <div class="prio">P{{ task.priority }}</div>
+                                <button onclick="showEdit({{ task.id }})">Edit</button>
+                                <form method="post" action="{{ url_for('delete', date=date, task_id=task.id) }}" onsubmit="return confirm('Delete task?');">
+                                    <button type="submit" class="del">Delete</button>
+                                </form>
+                            </div>
+                            <div class="edit" id="edit-{{ task.id }}" style="display:none">
+                                <form method="post" action="{{ url_for('edit', date=date, task_id=task.id) }}">
+                                    <input type="text" name="content" value="{{ task.content }}" required>
+                                    <input type="datetime-local" name="due_time" value="{{ task.due_time|replace(' ', 'T') if task.due_time }}">
+                                    <select name="priority">
+                                        <option value="1" {% if task.priority==1 %}selected{% endif %}>High</option>
+                                        <option value="2" {% if task.priority==2 %}selected{% endif %}>Normal</option>
+                                        <option value="3" {% if task.priority==3 %}selected{% endif %}>Low</option>
+                                    </select>
+                                    <input type="text" name="category" value="{{ task.category }}">
+                                    <input type="text" name="tags" value="{{ task.tags }}">
+                                    <input type="text" name="notes" value="{{ task.notes }}">
+                                    <button type="submit">Save</button>
+                                </form>
+                            </div>
+                        </li>
+                    {% else %}
+                        <li class="empty">No tasks for this date. Add one above to get started.</li>
+                    {% endfor %}
+                </ul>
+            </section>
+            <aside class="learn">
+                <h2>How this works</h2>
+                <p>Use the add form to set a task, optional due time, priority, category and tags.</p>
+                <p>Click the circle to mark done. Use edit to change details. Search matches content, category and tags.</p>
+                <h3>Fields</h3>
+                <ul>
+                    <li><strong>Priority</strong>: 1 high, 2 normal, 3 low</li>
+                    <li><strong>Due time</strong>: local date and time</li>
+                    <li><strong>Tags</strong>: comma-separated keywords</li>
+                </ul>
+                <h3>Tips</h3>
+                <ul>
+                    <li>Focus on high-priority tasks first</li>
+                    <li>Use categories for different projects</li>
+                    <li>Keep notes short and actionable</li>
+                </ul>
+            </aside>
+        </main>
+        <footer class="footer">Built to learn: tasks are stored locally in SQLite</footer>
     </div>
 </body>
 </html>

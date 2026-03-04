@@ -1,0 +1,60 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment folder (commonly named "venv", "env", or ".env")
+venv/
+env/
+.env/
+.venv/
+
+# Flask specific
+instance/
+*.db
+*.sqlite3
+*.sqlite
+
+# Environment files
+.env
+*.env
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Log files
+*.log
+
+# Flask/Migration folders
+migrations/
+
+# Flask app instance
+instance/
+
+# Coverage reports
+.coverage
+coverage.xml
+*.coveragerc
+
+# Build directories
+build/
+dist/
+
+# Python wheels and package artifacts
+*.egg-info/
+*.egg
+
+# Pytest / unittest config
+*.pyo

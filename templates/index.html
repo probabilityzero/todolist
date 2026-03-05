@@ -5,298 +5,533 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>专业待办 — {{ date }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <meta name="theme-color" content="#f4f1ea">
     <style>
-        * { box-sizing: border-box; outline: none; }
-        :root{ --bg: #f4f1ea; --text: #4a4a4a; --card: rgba(255,255,255,0.7); --muted:#95a5a6; --accent:#2c3e50; --panel:#fff }
-        .dark-theme{ --bg:#0b1220; --text:#d1d5db; --card:rgba(255,255,255,0.03); --muted:#9ca3af; --accent:#60a5fa; --panel:#07101a }
-        body { margin: 0; padding: 0; font-family: 'Noto Sans SC', sans-serif; background-color: var(--bg); color: var(--text); transition: background 0.25s, color 0.25s; background-size: cover; background-attachment: fixed; background-position: center; }
-        .layout { max-width: 900px; margin: 0 auto; padding: 20px; position: relative; z-index: 1; }
-        #bg-video { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; opacity: 0.8; display: none; }
-        #widget-video { width: 100%; height: 180px; object-fit: cover; border-radius: 10px; display: none; }
-        .topbar { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 30px; }
-        .nav { display: flex; align-items: center; justify-content: center; gap: 15px; font-size: 0.9rem; color: #7f8c8d; flex: 1; }
-        .nav-btn { background: none; border: 1px solid #dcdcdc; padding: 5px 10px; border-radius: 20px; cursor: pointer; transition: all 0.3s; color: #7f8c8d; }
-        .nav-btn:hover { background: #e0e0e0; color: #2c3e50; }
-        .session-header { margin-bottom: 40px; }
-        .title { font-family: 'Cinzel', serif; font-size: 2rem; color: var(--accent); letter-spacing: 2px; margin-bottom: 20px; }
-        .now-playing { width: 100%; max-width: 400px; background: var(--card); backdrop-filter: blur(10px); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); display: none; }
-        .now-playing.active { display: block; }
-        #main-player { width: 100%; height: 225px; border: none; background: #000; }
-        .audio-visualizer { position: fixed; bottom: 0; left: 0; width: 100%; height: 60px; display: flex; justify-content: center; align-items: flex-end; gap: 3px; z-index: 998; opacity: 0; transition: opacity 0.5s; pointer-events: none; }
-        .audio-visualizer.active { opacity: 1; }
-        .bar { width: 4px; background: rgba(44, 62, 80, 0.4); border-radius: 2px; animation: wave 1.2s ease-in-out infinite; }
-        .bar:nth-child(1) { height: 10px; animation-delay: 0.0s; }
-        .bar:nth-child(2) { height: 20px; animation-delay: 0.2s; }
-        .bar:nth-child(3) { height: 15px; animation-delay: 0.4s; }
-        .bar:nth-child(4) { height: 25px; animation-delay: 0.1s; }
-        .bar:nth-child(5) { height: 10px; animation-delay: 0.3s; }
-        .bar:nth-child(6) { height: 30px; animation-delay: 0.5s; }
-        .bar:nth-child(7) { height: 20px; animation-delay: 0.2s; }
-        .bar:nth-child(8) { height: 15px; animation-delay: 0.4s; }
-        .bar:nth-child(9) { height: 25px; animation-delay: 0.1s; }
-        .bar:nth-child(10) { height: 10px; animation-delay: 0.3s; }
-        @keyframes wave { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(2.5); } }
-        .search-bar { display: flex; background: rgba(255,255,255,0.1); border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); gap: 10px; margin-bottom: 20px; margin-top: 240px;}
-        .search-bar input { flex-grow: 1; padding: 12px 15px; font-family: inherit; font-size: 0.9rem; color: #2c3e50; transition: all 0.3s; }
-        .stats { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
-        .progress { height: 12px; border: 2px solid #fff; background: #e0e0e0; border-radius: 2px; overflow: hidden; flex: 1; }
-        .bar-load { height: 100%; background: linear-gradient(90deg, #aab7b8, #2c3e50); transition: width 0.5s ease; }
-        .counts { text-align: right; font-size: 0.8rem; color: var(--muted); font-family: 'Cinzel', serif; }
-        ul { list-style: none; padding: 0; margin: 0; }
-        li.task { background: var(--card); backdrop-filter: blur(5px); margin-bottom: 12px; border-radius: 10px; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; position: relative; transition: all 0.3s; z-index: 1; border: 1px solid rgba(255,255,255,0.06); }
-        li.task:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.05); transform: translateX(1px); }
-        li.task.done { opacity: 0.6; }
-        li.task.done .content { text-decoration: line-through; color: #95a5a6; }
-        .left { display: flex; align-items: center; gap: 15px; flex-grow: 1; }
-        .check { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #aab7b8; background: none; cursor: pointer; color: #2c3e50; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; transition: all 0.3s; }
-        .check:hover { border-color: #2c3e50; background: rgba(44,62,80,0.1); }
-        .content { font-size: 1rem; cursor: pointer; transition: color 0.3s; font-weight: 500; }
-        .content:hover { color: #2c3e50; }
-        .sub { font-size: 0.8rem; color: #95a5a6; margin-top: 4px; }
-        .right { display: flex; align-items: center; gap: 10px; }
-        .prio { font-size: 0.7rem; font-weight: 700; color: var(--muted); background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; }
-        .del { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 0.8rem; opacity: 0; transition: opacity 0.3s; padding: 5px; }
-        li.task:hover .del { opacity: 1; }
+        *{box-sizing:border-box;outline:none;margin:0;padding:0}
+        :root{
+            --bg:#f0ede6;--text:#3a3a3a;--card:rgba(255,255,255,0.72);
+            --muted:#8a9a9b;--accent:#2c3e50;--panel:#fff;
+            --border:rgba(0,0,0,0.07);--shadow:rgba(0,0,0,0.06);
+            --radius:9px;
+        }
+        .dark-theme{
+            --bg:#0c1220;--text:#cfd3db;--card:rgba(255,255,255,0.04);
+            --muted:#7a8694;--accent:#7eb3f5;--panel:#101926;
+            --border:rgba(255,255,255,0.05);--shadow:rgba(0,0,0,0.3);
+        }
+        body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);transition:background .25s,color .25s;background-size:cover;background-attachment:fixed;background-position:center;min-height:100vh;font-size:13px;}
         
-        .popover { position: absolute; top: 60px; right: 10px; width: 300px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); z-index: 100; font-size: 0.9rem; }
-        .icon-btn { background: none; border: none; cursor: pointer; color: #7f8c8d; padding: 8px; border-radius: 50%; transition: all 0.3s; display: flex; align-items: center; justify-content: center; }
-        .icon-btn:hover { background: rgba(0,0,0,0.05); color: #2c3e50; }
-        .widget-btn { position: fixed; bottom: 20px; right: 20px; background: #2c3e50; color: white; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 999; cursor: pointer; transition: transform 0.2s; }
-        .widget-btn:hover { transform: scale(1.1); }
+        #bg-video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:-2;opacity:.8;display:none;}
+        .deco{font-family:'Cinzel',serif;color:rgba(0,0,0,0.06);font-size:7rem;position:fixed;bottom:-30px;left:-10px;z-index:0;pointer-events:none;user-select:none;line-height:1;}
+        .dark-theme .deco{color:rgba(255,255,255,0.03);}
+        
+        .app{display:grid;grid-template-columns:1fr 260px;grid-template-rows:48px 1fr;height:100vh;max-width:1100px;margin:0 auto;padding:14px;gap:12px;position:relative;z-index:1;}
+        
+        .topbar{grid-column:1/-1;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);padding-bottom:10px;}
+        .logo{font-family:'Cinzel',serif;font-size:.95rem;color:var(--accent);letter-spacing:2px;font-weight:700;white-space:nowrap;}
+        .nav-group{display:flex;align-items:center;gap:6px;margin-left:auto;}
+        .nav { display: flex; align-items: center; justify-content: center; gap: 15px; font-size: 0.9rem; color: #7f8c8d; flex: 1; }
+        .date-nav{display:flex;align-items:center;gap:5px;}
+        .nav-arrow{background:none;border:1px solid var(--border);width:24px;height:24px;border-radius:6px;cursor:pointer;color:var(--muted);font-size:.75rem;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+        .nav-arrow:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+        .date-label{font-size:1rem;color:var(--muted);font-family:'Cinzel',serif;min-width:90px;text-align:center;}
+        .divider{width:1px;height:18px;background:var(--border);}
+        .icon-btn{background:none;border:1px solid transparent;width:28px;height:28px;border-radius:7px;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all .2s;}
+        .icon-btn:hover{background:var(--card);border-color:var(--border);color:var(--accent);}
+        .icon-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+        .pill-btn{background:none;border:1px solid var(--border);padding:4px 10px;border-radius:20px;cursor:pointer;color:var(--muted);font-size:.75rem;transition:all .2s;font-family:inherit;}
+        .pill-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+        .pill-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+        
+        .main-col{display:flex;flex-direction:column;gap:10px;overflow:hidden;}
+        
+        .search-row{display:flex;align-items:center;gap:6px;}
+        .search-wrap{display:flex;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:0 10px;gap:6px;flex:1;transition:border-color .2s;}
+        .search-wrap:focus-within{border-color:var(--accent);}
+        .search-wrap input{background:none;border:none;padding:7px 0;font-family:inherit;font-size:.78rem;color:var(--text);width:100%;}
+        .search-wrap input::placeholder{color:var(--muted);}
+        .search-wrap svg{width:13px;height:13px;color:var(--muted);flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+        .search-btn{background:var(--accent);border:none;border-radius:7px;padding:7px 14px;cursor:pointer;color:#fff;font-size:.75rem;font-family:inherit;white-space:nowrap;transition:opacity .2s;}
+        .search-btn:hover{opacity:.85;}
+        
+        .stats-row{display:flex;align-items:center;gap:10px;}
+        .progress-bar{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+        .progress-fill{height:100%;background:linear-gradient(90deg,#aab7b8,var(--accent));transition:width .5s ease;}
+        .counts{font-size:.72rem;color:var(--muted);font-family:'Cinzel',serif;white-space:nowrap;}
+        
+        .task-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding-right:2px;}
+        .task-list::-webkit-scrollbar{width:3px;}
+        .task-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+        
+        .task-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;gap:8px;padding:8px 12px;transition:all .2s;cursor:default;position:relative;}
+        .task-row:hover{box-shadow:0 3px 12px var(--shadow);transform:translateX(1px);}
+        .task-row.done{opacity:.55;}
+        .task-row.done .task-content{text-decoration:line-through;color:var(--muted);}
+        .task-row.editing{border-color:var(--accent);box-shadow:0 0 0 2px rgba(44,62,80,.1);}
+        .dark-theme .task-row.editing{box-shadow:0 0 0 2px rgba(126,179,245,.1);}
+        
+        .check-btn{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--muted);background:none;cursor:pointer;color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:.65rem;transition:all .2s;flex-shrink:0;padding:0;}
+        .check-btn:hover{border-color:var(--accent);background:rgba(44,62,80,.08);}
+        .done .check-btn{background:var(--accent);border-color:var(--accent);color:#fff;}
+        
+        .task-meta{flex:1;min-width:0;}
+        .task-content{font-size:.85rem;font-weight:500;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .2s;}
+        .task-content:hover{color:var(--accent);}
+        .task-sub{font-size:.7rem;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        
+        .task-right{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+        .prio-badge{font-size:.65rem;font-weight:700;padding:2px 6px;border-radius:4px;}
+        .p1{background:#fdecea;color:#c0392b;}
+        .p2{background:#eef3f6;color:#2c3e50;}
+        .p3{background:#ecf9f1;color:#27ae60;}
+        .dark-theme .p1{background:rgba(192,57,43,.2);color:#e87461;}
+        .dark-theme .p2{background:rgba(44,62,80,.3);color:#7eb3f5;}
+        .dark-theme .p3{background:rgba(39,174,96,.2);color:#55d17a;}
+        .del-btn{background:none;border:none;color:#e74c3c;cursor:pointer;font-size:.7rem;opacity:0;transition:opacity .2s;padding:3px 6px;border-radius:4px;font-family:inherit;}
+        .task-row:hover .del-btn{opacity:1;}
+        
+        .add-task-row{background:transparent;border:1.5px dashed var(--border);border-radius:var(--radius);display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;transition:all .2s;color:var(--muted);}
+        .add-task-row:hover{border-color:var(--accent);color:var(--accent);background:rgba(44,62,80,.03);}
+        .add-task-row span{font-size:.8rem;}
+        
+        .side-col{display:flex;flex-direction:column;gap:10px;}
+        
+        .timer-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;align-items:center;gap:10px;}
+        .timer-label{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-family:'Cinzel',serif;}
+        .timer-display{font-family:'Cinzel',serif;font-size:2.6rem;color:var(--accent);letter-spacing:3px;line-height:1;}
+        .timer-sub{font-size:.65rem;color:var(--muted);}
+        .timer-btns{display:flex;gap:6px;}
+        .timer-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:.72rem;color:var(--text);font-family:inherit;transition:all .2s;}
+        .timer-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+        .timer-btn.running{background:var(--accent);color:#fff;border-color:var(--accent);}
+        .timer-modes{display:flex;gap:4px;}
+        .timer-mode{background:none;border:1px solid var(--border);border-radius:5px;padding:3px 8px;cursor:pointer;font-size:.65rem;color:var(--muted);font-family:inherit;transition:all .2s;}
+        .timer-mode.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+        .timer-ring{position:relative;width:70px;height:70px;}
+        .timer-ring svg{transform:rotate(-90deg);}
+        .ring-bg{fill:none;stroke:var(--border);stroke-width:4;}
+        .ring-fill{fill:none;stroke:var(--accent);stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset .5s linear;}
+        .timer-ring-inner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:.75rem;color:var(--accent);}
+
+        .media-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;}
+        .media-header{padding:8px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+        .media-title{font-size:.72rem;color:var(--muted);font-family:'Cinzel',serif;}
+        .media-body{padding:8px;display:flex;flex-direction:column;gap:6px;}
+        .media-url-wrap{display:flex;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:0 8px;gap:5px;transition:border-color .2s;}
+        .media-url-wrap:focus-within{border-color:var(--accent);}
+        .media-url-wrap input{background:none;border:none;padding:6px 0;font-family:inherit;font-size:.72rem;color:var(--text);width:100%;}
+        .media-url-wrap input::placeholder{color:var(--muted);}
+        .media-url-wrap svg{width:12px;height:12px;color:var(--muted);flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+        .media-mode-btns{display:flex;gap:4px;}
+        .mode-btn{background:none;border:1px solid var(--border);border-radius:5px;padding:3px 9px;cursor:pointer;font-size:.7rem;color:var(--muted);font-family:inherit;transition:all .2s;}
+        .mode-btn:hover,.mode-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+        #audio-player{width:100%;height:28px;display:none;}
+        #yt-frame{width:100%;height:140px;border:none;border-radius:6px;display:none;}
+        #widget-video{width:100%;border-radius:6px;display:none;max-height:120px;object-fit:cover;}
+        .media-hint{font-size:.65rem;color:var(--muted);text-align:center;padding:4px 0;}
         #media-widget { position: fixed; top: 40px; right: 20px; width: 340px; background: rgba(255,255,255,0.1); border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.18); overflow: hidden; z-index: 1000; display: block; resize: both; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
-        .widget-header { background: var(--panel); padding: 10px; cursor: move; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: #7f8c8d; border-bottom: 1px solid rgba(0,0,0,0.06); }
-        .widget-header span[contenteditable] { outline: none; cursor: text; }
-        .widget-content { padding: 10px; display: flex; flex-direction: column; gap: 10px; }
-        .pill { background: rgba(255,255,255,0.2); border: 1px solid #dcdcdc; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; color: #7f8c8d; cursor: pointer; transition: all 0.3s; }
-        .icon-svg{ width:18px; height:18px; display:inline-block; vertical-align:middle; }
-        .icon-btn svg{ color:inherit; }
-        .pill:hover { background: #2c3e50; color: white; border-color: #2c3e50; }
-        .chinese-deco { font-family: 'Cinzel', serif; color: rgba(0,0,0,0.1); font-size: 5rem; position: fixed; bottom: -20px; left: -20px; z-index: -1; pointer-events: none; user-select: none; }
-        .add-new-task { border: 2px dashed #dcdcdc; background: transparent; cursor: pointer; color: #95a5a6; }
-        .add-new-task:hover { border-color: #aab7b8; background: rgba(255,255,255,0.5); }
-        .add-form { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        input, select { background: var(--panel); border: 1px solid rgba(0,0,0,0.08); padding: 12px 15px; border-radius: 8px; font-family: inherit; font-size: 0.9rem; color: var(--text); transition: all 0.3s; width: 100%; }
-        input:focus, select:focus { border-color: #aab7b8; box-shadow: 0 0 0 3px rgba(170,183,184,0.12); }
-        .btn-add { background: #2c3e50; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 500; letter-spacing: 1px; transition: transform 0.2s, background 0.3s; text-transform: uppercase; font-size: 0.8rem; }
-        .btn-add:hover { background: #34495e; transform: translateY(-1px); }
-        .media-controls { display:flex; gap:8px; align-items:center; }
-        .media-controls .pill { padding:6px 10px; font-size:0.8rem; }
-        .media-controls .active { background:#2c3e50; color:#fff; }
-        .prio.p1 { background:#fdecea; color:#c0392b; }
-        .prio.p2 { background:#eef3f6; color:#2c3e50; }
-        .prio.p3 { background:#ecf9f1; color:#27ae60; }
-        .edit-panel { position: fixed; left: 0; top: 0; width: auto; min-width: 300px; max-width: 520px; background: var(--panel); border: 1px solid rgba(0,0,0,0.08); padding: 20px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.18); display: none; }
-        .edit-panel.active { display: block; z-index: 300000; }
-        .dark-theme .edit-panel{ border-color: rgba(255,255,255,0.04); }
-        .dark-theme .widget-header{ color:var(--muted) }
-        .dark-theme li.task{ border:1px solid rgba(255,255,255,0.03) }
-        @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } .topbar { flex-wrap: wrap; gap: 10px; } .nav { order: -1; width: 100%; } }
+        
+        .viz-bar-row{display:flex;align-items:flex-end;gap:2px;height:20px;justify-content:center;}
+        .vbar{width:3px;background:var(--accent);border-radius:1px;opacity:.4;animation:wave 1.2s ease-in-out infinite;}
+        .vbar:nth-child(1){height:4px;animation-delay:0s;}
+        .vbar:nth-child(2){height:10px;animation-delay:.2s;}
+        .vbar:nth-child(3){height:7px;animation-delay:.4s;}
+        .vbar:nth-child(4){height:14px;animation-delay:.1s;}
+        .vbar:nth-child(5){height:6px;animation-delay:.3s;}
+        .vbar:nth-child(6){height:16px;animation-delay:.5s;}
+        .vbar:nth-child(7){height:9px;animation-delay:.15s;}
+        @keyframes wave{0%,100%{transform:scaleY(1)}50%{transform:scaleY(2.2)}}
+        .viz-bar-row{display:none;}
+        .viz-bar-row.active{display:flex;}
+
+        .edit-overlay{position:fixed;inset:0;z-index:2000;display:none;pointer-events:none;}
+        .edit-overlay.active{display:block;pointer-events:auto;}
+        .edit-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0);cursor:default;}
+        .edit-panel{position:absolute;background:var(--panel);border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.14);padding:16px;width:320px;pointer-events:auto;}
+        .dark-theme .edit-panel{box-shadow:0 12px 40px rgba(0,0,0,.4);}
+        .edit-panel-title{font-size:.75rem;color:var(--muted);font-family:'Cinzel',serif;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+        .edit-field{margin-bottom:8px;}
+        .edit-field label{font-size:.68rem;color:var(--muted);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px;}
+        .edit-field input,.edit-field select{background:var(--bg);border:1px solid var(--border);padding:7px 10px;border-radius:6px;font-family:inherit;font-size:.78rem;color:var(--text);width:100%;transition:border-color .2s;}
+        .edit-field input:focus,.edit-field select:focus{border-color:var(--accent);}
+        .edit-field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+        .edit-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:12px;}
+        .btn-cancel{background:none;border:1px solid var(--border);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.75rem;color:var(--muted);font-family:inherit;transition:all .2s;}
+        .btn-cancel:hover{background:var(--border);}
+        .btn-save{background:var(--accent);border:none;padding:6px 16px;border-radius:6px;cursor:pointer;font-size:.75rem;color:#fff;font-family:inherit;transition:opacity .2s;letter-spacing:.5px;}
+        .btn-save:hover{opacity:.85;}
+
+        .kbd-hint{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:100;pointer-events:none;}
+        .kbd{font-size:.62rem;background:var(--card);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--muted);font-family:monospace;}
+        
+        .help-popover{position:absolute;top:52px;left:0;width:240px;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 24px var(--shadow);padding:14px;z-index:500;font-size:.78rem;display:none;}
+        .help-popover h4{font-size:.8rem;margin-bottom:8px;color:var(--accent);font-family:'Cinzel',serif;}
+        .help-popover p{color:var(--muted);line-height:1.6;margin-bottom:6px;}
+        .help-popover kbd{background:var(--bg);border:1px solid var(--border);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.7rem;}
+
+        @media(max-width:700px){
+            .app{grid-template-columns:1fr;grid-template-rows:auto auto 1fr auto;}
+            .side-col{flex-direction:row;flex-wrap:wrap;}
+            .timer-card,.media-card{flex:1;min-width:200px;}
+        }
     </style>
 </head>
 <body>
-    
     <video id="bg-video" muted loop autoplay></video>
-    <div class="chinese-deco">静</div>
-    <div class="audio-visualizer" id="audio-viz">
-        <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
-        <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
-    </div>
+    <div class="deco">静</div>
 
-    <div class="layout">
+    <div class="app">
         <header class="topbar">
-            <div class="left-controls">
-                <button class="pill" onclick="toggleHelp()">帮助</button>
-            </div>
+            <span class="logo">日程</span>
+            <div class="divider"></div>
             <div class="nav">
-                <button class="nav-btn" onclick="navigate(-1)">◀</button>
-                <div class="date-display">{{ date }}</div>
-                <button class="nav-btn" onclick="navigate(1)">▶</button>
+                <div class="date-nav">
+                    <button class="nav-arrow" onclick="navigate(-1)">◀</button>
+                    <span class="date-label">{{ date }}</span>
+                    <button class="nav-arrow" onclick="navigate(1)">▶</button>
+                </div>
             </div>
-            <div class="right-controls" style="display:flex; gap:5px;">
-                <button class="icon-btn" id="theme-toggle" title="切换主题">
-                    <svg id="icon-moon" class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;">
-                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                    </svg>
-                    <svg id="icon-sun" class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-                        <circle cx="12" cy="12" r="4"></circle>
-                        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
-                    </svg>
+            <div class="divider"></div>
+            <div class="nav-group">
+                <button class="icon-btn" id="theme-toggle" title="切换主题 (D)">
+                    <svg id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                    <svg id="icon-sun" viewBox="0 0 24 24" style="display:none;"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
                 </button>
-                <button class="icon-btn" onclick="document.getElementById('bg-upload').click()" title="背景">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                <button class="icon-btn" onclick="document.getElementById('bg-upload').click()" title="背景图片">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                 </button>
                 <input type="file" id="bg-upload" accept="image/*,video/*" style="display:none" onchange="handleBgUpload(this)">
                 <button class="icon-btn" onclick="toggleMediaWidget()" title="媒体">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-youtube-icon lucide-youtube"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></svg>
                 </button>
             </div>
-        </header>
-        
-        <main>
-            <section class="session-header">
-                <div class="title">{{ session_title }}</div>
-            </section>
-
-            <section class="tasks">
-                <form class="search-bar" method="get" action="{{ url_for('index', date=date) }}">
-                    <input type="search" name="q" placeholder="搜索任务..." value="{{ query or '' }}">
-                    <button type="submit" class="icon-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></button>
-                </form>
-                <div class="stats">
-                    <div class="progress"><div class="bar-load" style="width: {{ progress }}%"></div></div>
-                    <div class="counts">完成度: {{ done }} / {{ total }}</div>
+            <div style="position:relative;">
+                <button class="pill-btn" onclick="toggleHelp()" id="help-btn">帮助</button>
+                <div class="help-popover" id="help-popover">
+                    <h4>使用指南</h4>
+                    <p>点击任务文字即可编辑，圆圈标记完成。</p>
+                    <p><kbd>N</kbd> 新建任务 &nbsp; <kbd>Y</kbd> 媒体面板 &nbsp; <kbd>T</kbd> 计时器 &nbsp; <kbd>D</kbd> 深色模式 &nbsp; <kbd>Esc</kbd> 关闭弹窗</p>
                 </div>
-
-                <ul>
-                    {% for task in tasks %}
-                        <li class="task {% if task.completed %}done{% endif %}">
-                            <div class="left">
-                                <form method="post" action="{{ url_for('toggle', date=date, task_id=task.id) }}">
-                                    <button class="check" type="submit">{% if task.completed %}✓{% endif %}</button>
-                                </form>
-                                <div class="meta">
-                                    <div class="content" onclick="showEdit({{ task.id }})">{{ task.content }}</div>
-                                    <div class="sub">{{ task.category }} {% if task.due_time %}• {{ task.due_time }}{% endif %} {% if task.tags %}• {{ task.tags }}{% endif %}</div>
-                                </div>
-                            </div>
-                            <div class="right">
-                                <div class="prio p{{ task.priority }}">{% if task.priority==1 %}高优先{% elif task.priority==2 %}普通{% else %}低优先{% endif %}</div>
-                                <form method="post" action="{{ url_for('delete', date=date, task_id=task.id) }}" onsubmit="return confirm('确定删除?');">
-                                    <button type="submit" class="del">删除</button>
-                                </form>
-                            </div>
-                            <div class="edit-panel" id="edit-{{ task.id }}">
-                                <form method="post" action="{{ url_for('edit', date=date, task_id=task.id) }}">
-                                    <input type="text" name="content" value="{{ task.content }}" required>
-                                    <div class="grid-2" style="margin-top:10px;">
-                                        <input type="datetime-local" name="due_time" value="{{ task.due_time|replace(' ', 'T') if task.due_time }}">
-                                        <select name="priority">
-                                            <option value="1" {% if task.priority==1 %}selected{% endif %}>高优先</option>
-                                            <option value="2" {% if task.priority==2 %}selected{% endif %}>普通</option>
-                                            <option value="3" {% if task.priority==3 %}selected{% endif %}>低优先</option>
-                                        </select>
-                                    </div>
-                                    <div class="grid-2" style="margin-top:10px;">
-                                        <input type="text" name="category" value="{{ task.category }}" placeholder="类别">
-                                        <input type="text" name="tags" value="{{ task.tags }}" placeholder="标签">
-                                    </div>
-                                    <input type="text" name="notes" value="{{ task.notes }}" placeholder="备注" style="margin-top:10px;">
-                                    <div style="margin-top:15px; text-align:right;">
-                                        <button type="submit" class="btn-add" style="padding:8px 20px;">保存</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </li>
-                    {% endfor %}
-                    
-                    <li class="task add-new-task" onclick="showEdit('new')">
-                        <div class="content">新建任务...</div>
-                        <div class="edit-panel" id="edit-new">
-                            <form method="post" action="{{ url_for('add', date=date) }}">
-                                <input type="text" name="content" placeholder="新的任务" required>
-                                <div class="grid-2" style="margin-top:10px;">
-                                    <input type="datetime-local" name="due_time">
-                                    <select name="priority">
-                                        <option value="1">高优先</option>
-                                        <option value="2" selected>普通</option>
-                                        <option value="3">低优先</option>
-                                    </select>
-                                </div>
-                                <div class="grid-2" style="margin-top:10px;">
-                                    <input type="text" name="category" placeholder="类别">
-                                    <input type="text" name="tags" placeholder="标签">
-                                </div>
-                                <input type="text" name="notes" placeholder="备注" style="margin-top:10px;">
-                                <div style="margin-top:15px; text-align:right;">
-                                    <button type="submit" class="btn-add" style="padding:8px 20px;">添加</button>
-                                </div>
-                            </form>
-                        </div>
-                    </li>
-                </ul>
-            </section>
-            
-            <div id="help-popover" class="popover" style="display:none">
-                <h3 style="margin-top:0;">使用指南</h3>
-                <p>点击任务文字即可编辑。点击底部区域添加新任务。左侧圆圈标记完成。</p>
             </div>
-        </main>
+        </header>
+
+        <div class="main-col">
+            <div class="timer-card" id="timer-card">
+            <span style="font-size:2rem;color:var(--muted);font-family:'Cinzel',serif;">{{ session_title }}</span>
+                <span class="timer-label">专注计时</span>
+                <div class="timer-ring">
+                    <svg width="70" height="70" viewBox="0 0 70 70">
+                        <circle class="ring-bg" cx="35" cy="35" r="30"></circle>
+                        <circle class="ring-fill" id="ring-fill" cx="35" cy="35" r="30" stroke-dasharray="188.5" stroke-dashoffset="0"></circle>
+                    </svg>
+                    <div class="timer-ring-inner" id="ring-pct">100%</div>
+                </div>
+                <div class="timer-display" id="timer-display">25:00</div>
+                <div class="timer-modes">
+                    <button class="timer-mode active" onclick="setMode('pomodoro',this)">番茄</button>
+                    <button class="timer-mode" onclick="setMode('short',this)">短休</button>
+                    <button class="timer-mode" onclick="setMode('long',this)">长休</button>
+                    <button class="timer-mode" onclick="setMode('custom',this)">自定</button>
+                </div>
+                <div class="timer-btns">
+                    <button class="timer-btn" id="timer-start" onclick="toggleTimer()">开始</button>
+                    <button class="timer-btn" onclick="resetTimer()">重置</button>
+                </div>
+                <div class="timer-sub" id="timer-sub">专注 25 分钟</div>
+            </div>
+
+            <form class="search-row" method="get" action="{{ url_for('index', date=date) }}">
+                <div class="search-wrap">
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="search" name="q" placeholder="搜索任务..." value="{{ query or '' }}">
+                </div>
+                <button type="submit" class="search-btn">搜索</button>
+            </form>
+
+            <div class="stats-row">
+                <div class="progress-bar"><div class="progress-fill" style="width:{{ progress }}%"></div></div>
+                <span class="counts">{{ done }} / {{ total }}</span>
+            </div>
+
+            <div class="task-list" id="task-list">
+                {% for task in tasks %}
+                <div class="task-row {% if task.completed %}done{% endif %}" id="task-{{ task.id }}" data-id="{{ task.id }}">
+                    <form method="post" action="{{ url_for('toggle', date=date, task_id=task.id) }}" style="flex-shrink:0;">
+                        <button class="check-btn" type="submit">{% if task.completed %}✓{% endif %}</button>
+                    </form>
+                    <div class="task-meta">
+                        <div class="task-content" onclick="openEdit({{ task.id }}, event)">{{ task.content }}</div>
+                        <div class="task-sub">{{ task.category }}{% if task.due_time %} · {{ task.due_time }}{% endif %}{% if task.tags %} · {{ task.tags }}{% endif %}</div>
+                    </div>
+                    <div class="task-right">
+                        <span class="prio-badge p{{ task.priority }}">{% if task.priority==1 %}高{% elif task.priority==2 %}普通{% else %}低{% endif %}</span>
+                        <form method="post" action="{{ url_for('delete', date=date, task_id=task.id) }}" onsubmit="return confirm('确定删除?');">
+                            <button type="submit" class="del-btn">删除</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div class="add-task-row" onclick="openNewEdit(event)" id="add-task-trigger">
+                    <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>新建任务</span>
+                </div>
+            </div>
+        </div>
+
+    <div class="edit-overlay" id="edit-overlay">
+        <div class="edit-backdrop" id="edit-backdrop"></div>
+        <div class="edit-panel" id="edit-panel">
+            <div class="edit-panel-title" id="edit-panel-title">编辑任务</div>
+            <form id="edit-form" method="post">
+                <div class="edit-field">
+                    <label>任务内容</label>
+                    <input type="text" name="content" id="ef-content" required>
+                </div>
+                <div class="edit-field-row">
+                    <div class="edit-field">
+                        <label>截止时间</label>
+                        <input type="datetime-local" name="due_time" id="ef-due">
+                    </div>
+                    <div class="edit-field">
+                        <label>优先级</label>
+                        <select name="priority" id="ef-priority">
+                            <option value="1">高优先</option>
+                            <option value="2" selected>普通</option>
+                            <option value="3">低优先</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="edit-field-row">
+                    <div class="edit-field">
+                        <label>类别</label>
+                        <input type="text" name="category" id="ef-category" placeholder="类别">
+                    </div>
+                    <div class="edit-field">
+                        <label>标签</label>
+                        <input type="text" name="tags" id="ef-tags" placeholder="标签">
+                    </div>
+                </div>
+                <div class="edit-field">
+                    <label>备注</label>
+                    <input type="text" name="notes" id="ef-notes" placeholder="备注">
+                </div>
+                <div class="edit-actions">
+                    <button type="button" class="btn-cancel" onclick="closeEdit()">取消</button>
+                    <button type="submit" class="btn-save">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="kbd-hint">
+        <span class="kbd">N 新建</span>
+        <span class="kbd">Y 媒体</span>
+        <span class="kbd">T 计时</span>
+        <span class="kbd">D 主题</span>
+        <span class="kbd">Esc 关闭</span>
     </div>
 
     <div id="media-widget">
-        <div class="widget-header" onmousedown="startDrag(event)">
-            <span contenteditable="true">媒体链接</span>
-            <button class="icon-btn" onclick="toggleMediaWidget()" style="padding:0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-        </div>
-        <div class="widget-content">
-            <input type="text" id="media-url" placeholder="粘贴视频或音频链接..." style="font-size:0.8rem;">
-            <div class="media-controls">
-                <button type="button" class="pill" id="btn-audio">Audio</button>
-                <button type="button" class="pill" id="btn-youtube">YouTube</button>
-                <button type="button" class="icon-btn" id="btn-clear" title="清除">
-                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
+        <div class="media-header"  onmousedown="startDrag(event)">
+            <span class="media-title">媒体 <kbd style="font-size:.6rem;background:var(--bg);border:1px solid var(--border);padding:1px 5px;border-radius:3px;font-family:monospace;">Y</kbd></span>
+            <div style="display:flex;gap:4px;" onclick="toggleMediaWidget()" onmousedown="event.stopPropagation()">
+                <button class="icon-btn" id="btn-clear" title="清除">
+                    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
-            <audio id="audio-player" style="display:none;"></audio>
-            <video id="widget-video" muted loop autoplay style="display:none; width:100%; border-radius:8px;"></video>
-            <div class="now-playing" id="now-playing-container">
-                <iframe id="main-player" sandbox="allow-scripts allow-same-origin allow-presentation" allowfullscreen></iframe>
+        </div>
+        <div class="media-body">
+            <div class="media-url-wrap">
+                <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                <input type="text" id="media-url" placeholder="粘贴视频或音频链接...">
             </div>
+            <div class="media-mode-btns">
+                <button type="button" class="mode-btn active" id="btn-audio">Audio</button>
+                <button type="button" class="mode-btn" id="btn-youtube">YouTube</button>
+                <button type="button" class="mode-btn" id="btn-video">Video</button>
+            </div>
+            <div class="viz-bar-row" id="viz-bars">
+                <div class="vbar"></div><div class="vbar"></div><div class="vbar"></div>
+                <div class="vbar"></div><div class="vbar"></div><div class="vbar"></div>
+                <div class="vbar"></div>
+            </div>
+            <audio id="audio-player"></audio>
+            <iframe id="yt-frame" allowfullscreen sandbox="allow-scripts allow-same-origin allow-presentation"></iframe>
+            <video id="widget-video" muted loop autoplay></video>
+            <div class="media-hint" id="media-hint">Y 键快速打开</div>
         </div>
     </div>
-
+    
     <script>
         function navigate(delta){
-            var d = new Date('{{ date }}');
-            d.setDate(d.getDate() + delta);
-            var yyyy = d.getFullYear();
-            var mm = (d.getMonth()+1).toString().padStart(2,'0');
-            var dd = d.getDate().toString().padStart(2,'0');
-            window.location.href = '/' + yyyy + '-' + mm + '-' + dd;
+            var d=new Date('{{ date }}');
+            d.setDate(d.getDate()+delta);
+            var y=d.getFullYear(),m=(d.getMonth()+1).toString().padStart(2,'0'),dd=d.getDate().toString().padStart(2,'0');
+            window.location.href='/'+y+'-'+m+'-'+dd;
         }
-        function showEdit(id){
-            var el = document.getElementById('edit-'+id);
-            var allEdits = document.querySelectorAll('.edit-panel');
-            allEdits.forEach(e => { if(e.id !== 'edit-'+id) e.classList.remove('active'); });
-            if(el) el.classList.toggle('active');
+
+        var editOverlay=document.getElementById('edit-overlay');
+        var editPanel=document.getElementById('edit-panel');
+        var editForm=document.getElementById('edit-form');
+        var editTitle=document.getElementById('edit-panel-title');
+        var efContent=document.getElementById('ef-content');
+        var efDue=document.getElementById('ef-due');
+        var efPriority=document.getElementById('ef-priority');
+        var efCategory=document.getElementById('ef-category');
+        var efTags=document.getElementById('ef-tags');
+        var efNotes=document.getElementById('ef-notes');
+
+        var taskData={
+            {% for task in tasks %}
+            '{{ task.id }}':{
+                content:'{{ task.content|replace("'","\\'")|replace('"','\\"') }}',
+                due_time:'{{ (task.due_time or '')|replace(' ','T') }}',
+                priority:'{{ task.priority }}',
+                category:'{{ task.category or '' }}',
+                tags:'{{ task.tags or '' }}',
+                notes:'{{ task.notes or '' }}'
+            },
+            {% endfor %}
+        };
+
+        function positionPanel(el){
+            if(!el){editPanel.style.top='50%';editPanel.style.left='50%';editPanel.style.transform='translate(-50%,-50%)';return;}
+            var r=el.getBoundingClientRect();
+            var pw=320,ph=320;
+            var vw=window.innerWidth,vh=window.innerHeight;
+            var left=r.left+r.width/2-pw/2;
+            var top=r.bottom+8;
+            if(left+pw>vw-10)left=vw-pw-10;
+            if(left<10)left=10;
+            if(top+ph>vh-10)top=r.top-ph-8;
+            if(top<10)top=10;
+            editPanel.style.left=left+'px';
+            editPanel.style.top=top+'px';
+            editPanel.style.transform='none';
         }
+
+        function openEdit(id,e){
+            var td=taskData[String(id)];
+            if(!td)return;
+            editTitle.textContent='编辑任务';
+            editForm.action='{{ url_for("edit", date=date, task_id=0) }}'.replace('/0','/'+id);
+            efContent.value=td.content;
+            efDue.value=td.due_time||'';
+            efPriority.value=td.priority||'2';
+            efCategory.value=td.category||'';
+            efTags.value=td.tags||'';
+            efNotes.value=td.notes||'';
+            var row=document.getElementById('task-'+id);
+            positionPanel(row);
+            editOverlay.classList.add('active');
+            row&&row.classList.add('editing');
+            setTimeout(function(){efContent.focus();efContent.select();},50);
+        }
+
+        function openNewEdit(e){
+            editTitle.textContent='新建任务';
+            editForm.action='{{ url_for("add", date=date) }}';
+            efContent.value='';efDue.value='';efPriority.value='2';efCategory.value='';efTags.value='';efNotes.value='';
+            positionPanel(document.getElementById('add-task-trigger'));
+            editOverlay.classList.add('active');
+            setTimeout(function(){efContent.focus();},50);
+        }
+
+        function closeEdit(){
+            editOverlay.classList.remove('active');
+            document.querySelectorAll('.task-row.editing').forEach(function(r){r.classList.remove('editing');});
+        }
+
+        document.getElementById('edit-backdrop').addEventListener('click',function(e){
+            closeEdit();
+        });
+
+        document.getElementById('edit-panel').addEventListener('click',function(e){
+            e.stopPropagation();
+        });
+
         function toggleHelp(){
-            var p = document.getElementById('help-popover');
-            p.style.display = (p.style.display === 'block') ? 'none' : 'block';
+            var p=document.getElementById('help-popover');
+            p.style.display=(p.style.display==='block')?'none':'block';
         }
         function toggleMediaWidget(){
             var w = document.getElementById('media-widget');
-            w.style.display = (w.style.display === 'block') ? 'none' : 'block';
+            if(!w) return;
+            if(w.style.display === 'none' || getComputedStyle(w).display === 'none') w.style.display = 'block';
+            else w.style.display = 'none';
         }
-        function handleBgUpload(input){
-            if(input.files && input.files[0]){
-                var file = input.files[0];
-                var type = file.type.split('/')[0];
-                var url = URL.createObjectURL(file);
-                
-                if(type === 'video'){
-                    var vid = document.getElementById('bg-video');
-                    vid.src = url;
-                    vid.style.display = 'block';
-                    document.body.style.backgroundImage = 'none';
-                } else {
-                    var reader = new FileReader();
-                    reader.onload = function(e){
-                        document.body.style.backgroundImage = 'url(' + e.target.result + ')';
-                        document.body.style.backgroundSize = 'cover';
-                        document.getElementById('bg-video').style.display = 'none';
-                    };
-                    reader.readAsDataURL(file);
+
+        document.addEventListener('click',function(e){
+            var p=document.getElementById('help-popover');
+            var btn=document.getElementById('help-btn');
+            if(p.style.display==='block'&&!p.contains(e.target)&&e.target!==btn)p.style.display='none';
+
+            var w=document.getElementById('media-widget');
+            var toggleBtn=document.querySelector('[onclick="toggleMediaWidget()"]');
+            if(w && (w.style.display!=='none' && getComputedStyle(w).display!=='none')){
+                if(!w.contains(e.target) && e.target!==toggleBtn && !(toggleBtn && toggleBtn.contains(e.target))){
+                    w.style.display='none';
                 }
             }
+        });
+
+        var timerModes={pomodoro:25*60,short:5*60,long:15*60,custom:25*60};
+        var timerLabels={pomodoro:'专注 25 分钟',short:'短休 5 分钟',long:'长休 15 分钟',custom:'自定义'};
+        var currentMode='pomodoro';
+        var totalSeconds=timerModes[currentMode];
+        var remaining=totalSeconds;
+        var timerInterval=null;
+        var timerRunning=false;
+        var displayEl=document.getElementById('timer-display');
+        var startBtn=document.getElementById('timer-start');
+        var subEl=document.getElementById('timer-sub');
+        var ringFill=document.getElementById('ring-fill');
+        var ringPct=document.getElementById('ring-pct');
+        var circumference=188.5;
+
+        function formatTime(s){var m=Math.floor(s/60),sec=s%60;return m.toString().padStart(2,'0')+':'+sec.toString().padStart(2,'0');}
+        function updateRing(){
+            var pct=remaining/totalSeconds;
+            ringFill.style.strokeDashoffset=(circumference*(1-pct)).toFixed(2);
+            ringPct.textContent=Math.round(pct*100)+'%';
         }
-        
+        function renderTimer(){displayEl.textContent=formatTime(remaining);updateRing();}
+        function setMode(mode,btn){
+            resetTimer();
+            document.querySelectorAll('.timer-mode').forEach(function(b){b.classList.remove('active');});
+            btn.classList.add('active');
+            currentMode=mode;
+            if(mode==='custom'){
+                var v=prompt('输入分钟数:','25');
+                var n=parseInt(v);
+                if(!n||n<1)return;
+                timerModes.custom=n*60;
+                timerLabels.custom='自定义 '+n+' 分钟';
+            }
+            totalSeconds=timerModes[mode];
+            remaining=totalSeconds;
+            subEl.textContent=timerLabels[mode];
+            renderTimer();
+        }
+        function toggleTimer(){
+            if(timerRunning){
+                clearInterval(timerInterval);timerRunning=false;
+                startBtn.textContent='继续';startBtn.classList.remove('running');
+            }else{
+                timerRunning=true;startBtn.textContent='暂停';startBtn.classList.add('running');
+                timerInterval=setInterval(function(){
+                    if(remaining>0){remaining--;renderTimer();}
+                    else{clearInterval(timerInterval);timerRunning=false;startBtn.textContent='开始';startBtn.classList.remove('running');alert('时间到！');}
+                },1000);
+            }
+        }
+        function resetTimer(){
+            clearInterval(timerInterval);timerRunning=false;
+            startBtn.textContent='开始';startBtn.classList.remove('running');
+            remaining=totalSeconds;renderTimer();
+        }
+        renderTimer();
+
         var isDragging = false;
         var offset = [0, 0];
         function startDrag(e){
@@ -317,80 +552,103 @@
                 widget.style.bottom = 'auto';
             }
         });
+        
+        var selectedMode='auto';
+        var audioPlayer=document.getElementById('audio-player');
+        var ytFrame=document.getElementById('yt-frame');
+        var widgetVid=document.getElementById('widget-video');
+        var vizBars=document.getElementById('viz-bars');
+        var mediaHint=document.getElementById('media-hint');
+        var btnAudio=document.getElementById('btn-audio');
+        var btnYoutube=document.getElementById('btn-youtube');
+        var btnVideo=document.getElementById('btn-video');
 
-        document.getElementById('media-url').addEventListener('change', handleMediaChange);
-        var selectedMode = 'auto';
-        var btnAudio = document.getElementById('btn-audio');
-        var btnYoutube = document.getElementById('btn-youtube');
-        var btnClear = document.getElementById('btn-clear');
-        var iframe = document.getElementById('main-player');
-        var container = document.getElementById('now-playing-container');
-        var audioPlayer = document.getElementById('audio-player');
-        var viz = document.getElementById('audio-viz');
-        var widgetVideo = document.getElementById('widget-video');
-        btnAudio.addEventListener('click', function(){ selectedMode = 'audio'; btnAudio.classList.add('active'); btnYoutube.classList.remove('active'); });
-        btnYoutube.addEventListener('click', function(){ selectedMode = 'youtube'; btnYoutube.classList.add('active'); btnAudio.classList.remove('active'); });
-        btnClear.addEventListener('click', function(){ audioPlayer.pause(); audioPlayer.src = ''; iframe.src = ''; try{ widgetVideo.pause(); }catch(e){} widgetVideo.src = ''; widgetVideo.style.display = 'none'; viz.classList.remove('active'); container.classList.remove('active'); document.getElementById('media-url').value = ''; });
-        btnAudio.addEventListener('click', function(){ widgetVideo.pause(); widgetVideo.style.display = 'none'; container.classList.remove('active'); viz.classList.add('active'); });
-        function handleMediaChange(){
-            var url = document.getElementById('media-url').value || '';
-            var isAudio = url.match(/\.(mp3|wav|ogg|flac)(\?.*)?$/i);
-            var isVideo = url.match(/\.(mp4|webm|mov)(\?.*)?$/i);
-            if(selectedMode === 'audio' || (selectedMode === 'auto' && isAudio)){
-                container.classList.remove('active');
-                viz.classList.add('active');
-                audioPlayer.src = url;
-                audioPlayer.play();
-                iframe.src = '';
-                try{ widgetVideo.pause(); }catch(e){} widgetVideo.src = ''; widgetVideo.style.display = 'none';
-            } else if(selectedMode === 'youtube' || (selectedMode === 'auto' && url.includes('youtube.com/watch'))){
-                viz.classList.remove('active');
-                audioPlayer.pause();
-                try{ widgetVideo.pause(); }catch(e){} widgetVideo.src = ''; widgetVideo.style.display = 'none';
-                container.classList.add('active');
-                var vid = url.split('v=')[1];
-                if(vid){
-                    var ampPos = vid.indexOf('&');
-                    if(ampPos !== -1) vid = vid.substring(0, ampPos);
-                    iframe.src = 'https://www.youtube.com/embed/' + vid + '?autoplay=1';
-                } else {
-                    iframe.src = url;
-                }
-            } else if(isVideo){
-                viz.classList.remove('active');
-                audioPlayer.pause();
-                iframe.src = '';
-                widgetVideo.src = url;
-                widgetVideo.style.display = 'block';
-                try{ widgetVideo.play(); }catch(e){}
-                container.classList.remove('active');
-            } else {
-                viz.classList.remove('active');
-                audioPlayer.pause();
-                iframe.src = url;
-                container.classList.add('active');
+        function setMediaMode(mode){
+            selectedMode=mode;
+            [btnAudio,btnYoutube,btnVideo].forEach(function(b){b.classList.remove('active');});
+            if(mode==='audio')btnAudio.classList.add('active');
+            else if(mode==='youtube')btnYoutube.classList.add('active');
+            else if(mode==='video')btnVideo.classList.add('active');
+        }
+        btnAudio.addEventListener('click',function(){setMediaMode('audio');});
+        btnYoutube.addEventListener('click',function(){setMediaMode('youtube');});
+        btnVideo.addEventListener('click',function(){setMediaMode('video');});
+
+        function clearMedia(){
+            audioPlayer.pause();audioPlayer.src='';audioPlayer.style.display='none';
+            ytFrame.src='';ytFrame.style.display='none';
+            try{widgetVid.pause();}catch(ex){}widgetVid.src='';widgetVid.style.display='none';
+            vizBars.classList.remove('active');
+            document.getElementById('media-url').value='';
+            mediaHint.textContent='Y 键快速打开';
+        }
+        document.getElementById('btn-clear').addEventListener('click',clearMedia);
+
+        document.getElementById('media-url').addEventListener('change',handleMedia);
+        document.getElementById('media-url').addEventListener('keydown',function(e){if(e.key==='Enter')handleMedia();});
+
+        function handleMedia(){
+            var url=(document.getElementById('media-url').value||'').trim();
+            if(!url)return;
+            var isAudio=url.match(/\.(mp3|wav|ogg|flac|aac)(\?.*)?$/i);
+            var isVideo=url.match(/\.(mp4|webm|mov)(\?.*)?$/i);
+            var isYT=url.includes('youtube.com/watch')||url.includes('youtu.be/');
+            var mode=selectedMode;
+            if(mode==='auto'){if(isAudio)mode='audio';else if(isYT)mode='youtube';else if(isVideo)mode='video';}
+            clearMedia();
+            if(mode==='audio'){
+                audioPlayer.src=url;audioPlayer.style.display='block';audioPlayer.play();
+                vizBars.classList.add('active');mediaHint.textContent='正在播放';
+            }else if(mode==='youtube'||isYT){
+                var vid='';
+                if(url.includes('youtu.be/')){vid=url.split('youtu.be/')[1];if(vid.includes('?'))vid=vid.split('?')[0];}
+                else if(url.includes('v=')){vid=url.split('v=')[1];if(vid.includes('&'))vid=vid.split('&')[0];}
+                if(vid){ytFrame.src='https://www.youtube.com/embed/'+vid+'?autoplay=1';}
+                else{ytFrame.src=url;}
+                ytFrame.style.display='block';mediaHint.textContent='YouTube';
+            }else if(mode==='video'){
+                widgetVid.src=url;widgetVid.style.display='block';try{widgetVid.play();}catch(ex){}mediaHint.textContent='视频';
             }
         }
 
-        var themeToggle = document.getElementById('theme-toggle');
-        var iconSun = document.getElementById('icon-sun');
-        var iconMoon = document.getElementById('icon-moon');
-        function updateThemeIcon(t){
-            if(iconSun && iconMoon){
-                iconSun.style.display = (t === 'dark') ? 'inline-block' : 'none';
-                iconMoon.style.display = (t === 'dark') ? 'none' : 'inline-block';
+        function handleBgUpload(input){
+            if(!input.files||!input.files[0])return;
+            var file=input.files[0];
+            var type=file.type.split('/')[0];
+            var url=URL.createObjectURL(file);
+            if(type==='video'){
+                var vid=document.getElementById('bg-video');vid.src=url;vid.style.display='block';
+                document.body.style.backgroundImage='none';
+            }else{
+                var reader=new FileReader();
+                reader.onload=function(e){document.body.style.backgroundImage='url('+e.target.result+')';document.body.style.backgroundSize='cover';document.getElementById('bg-video').style.display='none';};
+                reader.readAsDataURL(file);
             }
         }
+
+        var themeToggle=document.getElementById('theme-toggle');
+        var iconSun=document.getElementById('icon-sun');
+        var iconMoon=document.getElementById('icon-moon');
         function applyTheme(t){
-            if(t === 'dark') document.body.classList.add('dark-theme'); else document.body.classList.remove('dark-theme');
-            updateThemeIcon(t);
+            document.body.classList.toggle('dark-theme',t==='dark');
+            iconSun.style.display=(t==='dark')?'block':'none';
+            iconMoon.style.display=(t==='dark')?'none':'block';
         }
-        var stored = localStorage.getItem('theme');
-        if(stored) applyTheme(stored);
-        themeToggle.addEventListener('click', function(){
-            var now = document.body.classList.contains('dark-theme') ? 'light' : 'dark';
-            applyTheme(now);
-            localStorage.setItem('theme', now);
+        var storedTheme=localStorage.getItem('theme');
+        if(storedTheme)applyTheme(storedTheme);
+        themeToggle.addEventListener('click',function(){
+            var now=document.body.classList.contains('dark-theme')?'light':'dark';
+            applyTheme(now);localStorage.setItem('theme',now);
+        });
+
+        document.addEventListener('keydown',function(e){
+            if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT'||e.target.isContentEditable)return;
+            var k=e.key.toLowerCase();
+            if(k==='n'){openNewEdit(null);}
+            else if(k==='y'){document.getElementById('media-url').focus();}
+            else if(k==='t'){document.getElementById('timer-card').scrollIntoView({behavior:'smooth'});}
+            else if(k==='d'){themeToggle.click();}
+            else if(k==='escape'){closeEdit();document.getElementById('help-popover').style.display='none';}
         });
     </script>
 </body>

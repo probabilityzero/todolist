@@ -1,11 +1,24 @@
+import os
+import sys
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 from datetime import datetime
 
-app = Flask(__name__)
+
+def get_base_path():
+    # Support running frozen executable (PyInstaller)
+    if getattr(sys, 'frozen', False):
+        return sys._MEIPASS
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+base_path = get_base_path()
+template_folder = os.path.join(base_path, 'templates')
+app = Flask(__name__, template_folder=template_folder)
 
 def get_db_connection():
-    conn = sqlite3.connect('todo.db')
+    db_path = os.path.join(base_path, 'todo.db')
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 

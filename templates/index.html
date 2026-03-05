@@ -8,13 +8,13 @@
     <style>
         *{box-sizing:border-box;outline:none;margin:0;padding:0}
         :root{
-            --bg:#f0ede6;--text:#3a3a3a;--card:rgba(255,255,255,0.72);
+            --bg:#f0ede6;--text:#3a3a3a;--card:rgba(255,255,255,0.1);
             --muted:#8a9a9b;--accent:#2c3e50;--panel:#fff;
             --border:rgba(0,0,0,0.07);--shadow:rgba(0,0,0,0.06);
             --radius:9px;
         }
         .dark-theme{
-            --bg:#0c1220;--text:#cfd3db;--card:rgba(255,255,255,0.04);
+            --bg:#0c1220;--text:#cfd3db;--card:rgba(255,255,255,0.05);
             --muted:#7a8694;--accent:#7eb3f5;--panel:#101926;
             --border:rgba(255,255,255,0.05);--shadow:rgba(0,0,0,0.3);
         }
@@ -24,7 +24,7 @@
         .deco{font-family:'Cinzel',serif;color:rgba(0,0,0,0.06);font-size:7rem;position:fixed;bottom:-30px;left:-10px;z-index:0;pointer-events:none;user-select:none;line-height:1;}
         .dark-theme .deco{color:rgba(255,255,255,0.03);}
         
-        .app{display:grid;grid-template-columns:1fr 260px;grid-template-rows:48px 1fr;height:100vh;max-width:1100px;margin:0 auto;padding:14px;gap:12px;position:relative;z-index:1;}
+        .app{display:grid;grid-template-columns:minmax(0,900px);grid-template-rows:48px 1fr;height:100vh;max-width:900px;margin:0 auto;padding:14px;gap:12px;position:relative;z-index:1;justify-content:center;}
         
         .topbar{grid-column:1/-1;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);padding-bottom:10px;}
         .logo{font-family:'Cinzel',serif;font-size:.95rem;color:var(--accent);letter-spacing:2px;font-weight:700;white-space:nowrap;}
@@ -99,7 +99,7 @@
         .timer-label{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-family:'Cinzel',serif;}
         .timer-display{font-family:'Cinzel',serif;font-size:2.6rem;color:var(--accent);letter-spacing:3px;line-height:1;}
         .timer-sub{font-size:.65rem;color:var(--muted);}
-        .timer-btns{display:flex;gap:6px;}
+        .timer-btns{display:none;gap:6px;}
         .timer-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:.72rem;color:var(--text);font-family:inherit;transition:all .2s;}
         .timer-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
         .timer-btn.running{background:var(--accent);color:#fff;border-color:var(--accent);}
@@ -110,9 +110,12 @@
         .timer-ring svg{transform:rotate(-90deg);}
         .ring-bg{fill:none;stroke:var(--border);stroke-width:4;}
         .ring-fill{fill:none;stroke:var(--accent);stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset .5s linear;}
-        .timer-ring-inner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:.75rem;color:var(--accent);}
+        .timer-ring-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Cinzel',serif;color:var(--accent);}
+        .timer-ring-inner #ring-text{font-size:1rem;letter-spacing:1px;font-weight:600}
+        .reset-icon{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.04);color:var(--muted);cursor:pointer;opacity:0;transform:scale(.92);transition:opacity .12s,transform .12s;pointer-events:none;font-weight:700}
+        .timer-ring.running .reset-icon{pointer-events:auto}
+        .timer-ring.running:hover .reset-icon{opacity:1;transform:scale(1)}
 
-        .media-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;}
         .media-header{padding:8px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
         .media-title{font-size:.72rem;color:var(--muted);font-family:'Cinzel',serif;}
         .media-body{padding:8px;display:flex;flex-direction:column;gap:6px;}
@@ -128,7 +131,7 @@
         #yt-frame{width:100%;height:140px;border:none;border-radius:6px;display:none;}
         #widget-video{width:100%;border-radius:6px;display:none;max-height:120px;object-fit:cover;}
         .media-hint{font-size:.65rem;color:var(--muted);text-align:center;padding:4px 0;}
-        #media-widget { position: fixed; top: 40px; right: 20px; width: 340px; background: rgba(255,255,255,0.1); border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.18); overflow: hidden; z-index: 1000; display: block; resize: both; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
+        #media-widget { position: fixed; top: 40px; right: 20px; width: 340px; background: rgba(255,255,255,0.1); border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.18); overflow: hidden; z-index: 1000; display: none; resize: both; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
         
         .viz-bar-row{display:flex;align-items:flex-end;gap:2px;height:20px;justify-content:center;}
         .vbar{width:3px;background:var(--accent);border-radius:1px;opacity:.4;animation:wave 1.2s ease-in-out infinite;}
@@ -146,9 +149,8 @@
         .edit-overlay{position:fixed;inset:0;z-index:2000;display:none;pointer-events:none;}
         .edit-overlay.active{display:block;pointer-events:auto;}
         .edit-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0);cursor:default;}
-        .edit-panel{position:absolute;background:var(--panel);border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.14);padding:16px;width:320px;pointer-events:auto;}
-        .dark-theme .edit-panel{box-shadow:0 12px 40px rgba(0,0,0,.4);}
-        .edit-panel-title{font-size:.75rem;color:var(--muted);font-family:'Cinzel',serif;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+        .edit-panel{position:absolute;background:var(--panel);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.14);padding:16px;width:320px;pointer-events:auto;}
+        .dark-theme .edit-panel{box-shadow:0 12px 40px rgba(0,0,0,.4);border:1px solid var(--border);}
         .edit-field{margin-bottom:8px;}
         .edit-field label{font-size:.68rem;color:var(--muted);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px;}
         .edit-field input,.edit-field select{background:var(--bg);border:1px solid var(--border);padding:7px 10px;border-radius:6px;font-family:inherit;font-size:.78rem;color:var(--text);width:100%;transition:border-color .2s;}
@@ -160,7 +162,6 @@
         .btn-save{background:var(--accent);border:none;padding:6px 16px;border-radius:6px;cursor:pointer;font-size:.75rem;color:#fff;font-family:inherit;transition:opacity .2s;letter-spacing:.5px;}
         .btn-save:hover{opacity:.85;}
 
-        .kbd-hint{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:100;pointer-events:none;}
         .kbd{font-size:.62rem;background:var(--card);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--muted);font-family:monospace;}
         
         .help-popover{position:absolute;top:52px;left:0;width:240px;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 24px var(--shadow);padding:14px;z-index:500;font-size:.78rem;display:none;}
@@ -182,6 +183,14 @@
     <div class="app">
         <header class="topbar">
             <span class="logo">日程</span>
+            <div style="position:relative;">
+                <button class="pill-btn" onclick="toggleHelp()" id="help-btn">帮助</button>
+                <div class="help-popover" id="help-popover">
+                    <h4>使用指南</h4>
+                    <p>点击任务文字即可编辑，圆圈标记完成。</p>
+                    <p><kbd>N</kbd> 新建任务 &nbsp; <kbd>Y</kbd> 媒体面板 &nbsp; <kbd>T</kbd> 计时器 &nbsp; <kbd>D</kbd> 深色模式 &nbsp; <kbd>Esc</kbd> 关闭弹窗</p>
+                </div>
+            </div>
             <div class="divider"></div>
             <div class="nav">
                 <div class="date-nav">
@@ -204,39 +213,27 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-youtube-icon lucide-youtube"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></svg>
                 </button>
             </div>
-            <div style="position:relative;">
-                <button class="pill-btn" onclick="toggleHelp()" id="help-btn">帮助</button>
-                <div class="help-popover" id="help-popover">
-                    <h4>使用指南</h4>
-                    <p>点击任务文字即可编辑，圆圈标记完成。</p>
-                    <p><kbd>N</kbd> 新建任务 &nbsp; <kbd>Y</kbd> 媒体面板 &nbsp; <kbd>T</kbd> 计时器 &nbsp; <kbd>D</kbd> 深色模式 &nbsp; <kbd>Esc</kbd> 关闭弹窗</p>
-                </div>
-            </div>
         </header>
 
         <div class="main-col">
             <div class="timer-card" id="timer-card">
-            <span style="font-size:2rem;color:var(--muted);font-family:'Cinzel',serif;">{{ session_title }}</span>
-                <span class="timer-label">专注计时</span>
-                <div class="timer-ring">
-                    <svg width="70" height="70" viewBox="0 0 70 70">
+            <span style="font-size:1.25rem;color:var(--muted);font-family:'Cinzel',serif;">{{ session_title }}</span> 
+                <div class="timer-ring" id="timer-ring" onclick="onRingClick(event)">
+                    <svg width="100" height="100" viewBox="0 0 70 70">
                         <circle class="ring-bg" cx="35" cy="35" r="30"></circle>
                         <circle class="ring-fill" id="ring-fill" cx="35" cy="35" r="30" stroke-dasharray="188.5" stroke-dashoffset="0"></circle>
                     </svg>
-                    <div class="timer-ring-inner" id="ring-pct">100%</div>
+                    <div class="reset-icon" id="ring-reset" title="重置">✕</div>
+                    <div class="timer-ring-inner">
+                        <div id="ring-text">25:00</div>
+                    </div>
                 </div>
-                <div class="timer-display" id="timer-display">25:00</div>
                 <div class="timer-modes">
                     <button class="timer-mode active" onclick="setMode('pomodoro',this)">番茄</button>
                     <button class="timer-mode" onclick="setMode('short',this)">短休</button>
                     <button class="timer-mode" onclick="setMode('long',this)">长休</button>
                     <button class="timer-mode" onclick="setMode('custom',this)">自定</button>
-                </div>
-                <div class="timer-btns">
-                    <button class="timer-btn" id="timer-start" onclick="toggleTimer()">开始</button>
-                    <button class="timer-btn" onclick="resetTimer()">重置</button>
-                </div>
-                <div class="timer-sub" id="timer-sub">专注 25 分钟</div>
+                </div> 
             </div>
 
             <form class="search-row" method="get" action="{{ url_for('index', date=date) }}">
@@ -272,16 +269,17 @@
                 {% endfor %}
 
                 <div class="add-task-row" onclick="openNewEdit(event)" id="add-task-trigger">
-                    <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <svg style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     <span>新建任务</span>
                 </div>
             </div>
         </div>
+    </div>
 
     <div class="edit-overlay" id="edit-overlay">
         <div class="edit-backdrop" id="edit-backdrop"></div>
         <div class="edit-panel" id="edit-panel">
-            <div class="edit-panel-title" id="edit-panel-title">编辑任务</div>
+            <div class="edit-panel-title" id="edit-panel-title"></div>
             <form id="edit-form" method="post">
                 <div class="edit-field">
                     <label>任务内容</label>
@@ -322,15 +320,6 @@
             </form>
         </div>
     </div>
-
-    <div class="kbd-hint">
-        <span class="kbd">N 新建</span>
-        <span class="kbd">Y 媒体</span>
-        <span class="kbd">T 计时</span>
-        <span class="kbd">D 主题</span>
-        <span class="kbd">Esc 关闭</span>
-    </div>
-
     <div id="media-widget">
         <div class="media-header"  onmousedown="startDrag(event)">
             <span class="media-title">媒体 <kbd style="font-size:.6rem;background:var(--bg);border:1px solid var(--border);padding:1px 5px;border-radius:3px;font-family:monospace;">Y</kbd></span>
@@ -413,7 +402,6 @@
         function openEdit(id,e){
             var td=taskData[String(id)];
             if(!td)return;
-            editTitle.textContent='编辑任务';
             editForm.action='{{ url_for("edit", date=date, task_id=0) }}'.replace('/0','/'+id);
             efContent.value=td.content;
             efDue.value=td.due_time||'';
@@ -428,8 +416,7 @@
             setTimeout(function(){efContent.focus();efContent.select();},50);
         }
 
-        function openNewEdit(e){
-            editTitle.textContent='新建任务';
+        function openNewEdit(e){ 
             editForm.action='{{ url_for("add", date=date) }}';
             efContent.value='';efDue.value='';efPriority.value='2';efCategory.value='';efTags.value='';efNotes.value='';
             positionPanel(document.getElementById('add-task-trigger'));
@@ -465,14 +452,6 @@
             var p=document.getElementById('help-popover');
             var btn=document.getElementById('help-btn');
             if(p.style.display==='block'&&!p.contains(e.target)&&e.target!==btn)p.style.display='none';
-
-            var w=document.getElementById('media-widget');
-            var toggleBtn=document.querySelector('[onclick="toggleMediaWidget()"]');
-            if(w && (w.style.display!=='none' && getComputedStyle(w).display!=='none')){
-                if(!w.contains(e.target) && e.target!==toggleBtn && !(toggleBtn && toggleBtn.contains(e.target))){
-                    w.style.display='none';
-                }
-            }
         });
 
         var timerModes={pomodoro:25*60,short:5*60,long:15*60,custom:25*60};
@@ -482,20 +461,23 @@
         var remaining=totalSeconds;
         var timerInterval=null;
         var timerRunning=false;
-        var displayEl=document.getElementById('timer-display');
+        var displayEl=document.getElementById('ring-text');
         var startBtn=document.getElementById('timer-start');
         var subEl=document.getElementById('timer-sub');
         var ringFill=document.getElementById('ring-fill');
-        var ringPct=document.getElementById('ring-pct');
+        var timerRing=document.getElementById('timer-ring');
+        var ringReset=document.getElementById('ring-reset');
         var circumference=188.5;
 
         function formatTime(s){var m=Math.floor(s/60),sec=s%60;return m.toString().padStart(2,'0')+':'+sec.toString().padStart(2,'0');}
         function updateRing(){
             var pct=remaining/totalSeconds;
-            ringFill.style.strokeDashoffset=(circumference*(1-pct)).toFixed(2);
-            ringPct.textContent=Math.round(pct*100)+'%';
+            ringFill.style.strokeDashoffset=(circumference*(1-pct)).toFixed(2); 
         }
-        function renderTimer(){displayEl.textContent=formatTime(remaining);updateRing();}
+        function renderTimer(){
+            if(displayEl) displayEl.textContent = formatTime(remaining);
+            updateRing();
+        }
         function setMode(mode,btn){
             resetTimer();
             document.querySelectorAll('.timer-mode').forEach(function(b){b.classList.remove('active');});
@@ -513,23 +495,82 @@
             subEl.textContent=timerLabels[mode];
             renderTimer();
         }
+        
+        function onRingClick(e){
+            if(!e) return;
+            // if reset icon clicked, reset
+            if(e.target && (e.target.id==='ring-reset' || (e.target.closest && e.target.closest('#ring-reset')))){
+                e.stopPropagation();
+                resetTimer();
+                return;
+            }
+            toggleTimer();
+        }
+        if(ringReset){ ringReset.addEventListener('click', function(e){ e.stopPropagation(); resetTimer(); }); }
+        
         function toggleTimer(){
             if(timerRunning){
-                clearInterval(timerInterval);timerRunning=false;
-                startBtn.textContent='继续';startBtn.classList.remove('running');
+                // pause
+                clearInterval(timerInterval);
+                timerInterval = null;
+                timerRunning = false;
+                if(startBtn) startBtn.classList.remove('running');
+                if(startBtn) startBtn.textContent = '开始';
+                if(timerRing) timerRing.classList.remove('running');
             }else{
-                timerRunning=true;startBtn.textContent='暂停';startBtn.classList.add('running');
-                timerInterval=setInterval(function(){
-                    if(remaining>0){remaining--;renderTimer();}
-                    else{clearInterval(timerInterval);timerRunning=false;startBtn.textContent='开始';startBtn.classList.remove('running');alert('时间到！');}
+                // start
+                if(remaining <= 0) remaining = totalSeconds;
+                timerRunning = true;
+                if(startBtn) startBtn.classList.add('running');
+                if(startBtn) startBtn.textContent = '暂停';
+                if(timerRing) timerRing.classList.add('running');
+                timerInterval = setInterval(function(){
+                    remaining -= 1;
+                    if(remaining <= 0){
+                        clearInterval(timerInterval);
+                        timerInterval = null;
+                        timerRunning = false;
+                        if(startBtn) startBtn.classList.remove('running');
+                        if(startBtn) startBtn.textContent = '开始';
+                        if(timerRing) timerRing.classList.remove('running');
+                        remaining = 0;
+                        renderTimer();
+                        // timer finished: reset remaining to totalSeconds for next run
+                        setTimeout(function(){ remaining = totalSeconds; renderTimer(); }, 800);
+                        return;
+                    }
+                    renderTimer();
                 },1000);
             }
         }
+
         function resetTimer(){
-            clearInterval(timerInterval);timerRunning=false;
-            startBtn.textContent='开始';startBtn.classList.remove('running');
-            remaining=totalSeconds;renderTimer();
+            clearInterval(timerInterval);
+            timerInterval = null;
+            timerRunning = false;
+            if(startBtn) startBtn.classList.remove('running');
+            if(startBtn) startBtn.textContent = '开始';
+            if(timerRing) timerRing.classList.remove('running');
+            remaining = totalSeconds;
+            renderTimer();
         }
+        function toggleHelp(){
+            var p=document.getElementById('help-popover');
+            p.style.display=(p.style.display==='block')?'none':'block';
+        }
+
+        function toggleMediaWidget(){
+            var w = document.getElementById('media-widget');
+            if(!w) return;
+            if(w.style.display === 'none' || getComputedStyle(w).display === 'none') w.style.display = 'block';
+            else w.style.display = 'none';
+        }
+
+        document.addEventListener('click',function(e){
+            var p=document.getElementById('help-popover');
+            var btn=document.getElementById('help-btn');
+            if(p.style.display==='block'&&!p.contains(e.target)&&e.target!==btn)p.style.display='none';
+        });
         renderTimer();
 
         var isDragging = false;
@@ -570,9 +611,9 @@
             else if(mode==='youtube')btnYoutube.classList.add('active');
             else if(mode==='video')btnVideo.classList.add('active');
         }
-        btnAudio.addEventListener('click',function(){setMediaMode('audio');});
-        btnYoutube.addEventListener('click',function(){setMediaMode('youtube');});
-        btnVideo.addEventListener('click',function(){setMediaMode('video');});
+        btnAudio.addEventListener('click',function(){ setMediaMode('audio'); var w=document.getElementById('media-widget'); if(w && (getComputedStyle(w).display==='none' || w.style.display==='none')) toggleMediaWidget(); });
+        btnYoutube.addEventListener('click',function(){ setMediaMode('youtube'); var w=document.getElementById('media-widget'); if(w && (getComputedStyle(w).display==='none' || w.style.display==='none')) toggleMediaWidget(); });
+        btnVideo.addEventListener('click',function(){ setMediaMode('video'); var w=document.getElementById('media-widget'); if(w && (getComputedStyle(w).display==='none' || w.style.display==='none')) toggleMediaWidget(); });
 
         function clearMedia(){
             audioPlayer.pause();audioPlayer.src='';audioPlayer.style.display='none';
@@ -645,7 +686,15 @@
             if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT'||e.target.isContentEditable)return;
             var k=e.key.toLowerCase();
             if(k==='n'){openNewEdit(null);}
-            else if(k==='y'){document.getElementById('media-url').focus();}
+            else if(k==='y'){
+                e.preventDefault();
+                e.stopPropagation();
+                var w=document.getElementById('media-widget');
+                if(w && (getComputedStyle(w).display==='none' || w.style.display==='none')) toggleMediaWidget();
+                setMediaMode('youtube');
+                var inp = document.getElementById('media-url');
+                inp && inp.focus();
+            }
             else if(k==='t'){document.getElementById('timer-card').scrollIntoView({behavior:'smooth'});}
             else if(k==='d'){themeToggle.click();}
             else if(k==='escape'){closeEdit();document.getElementById('help-popover').style.display='none';}

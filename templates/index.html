@@ -21,13 +21,13 @@
         body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);transition:background .25s,color .25s;background-size:cover;background-attachment:fixed;background-position:center;min-height:100vh;font-size:13px;}
         
         #bg-video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:-2;opacity:.8;display:none;}
-        .deco{font-family:'Cinzel',serif;color:rgba(0,0,0,0.06);font-size:7rem;position:fixed;bottom:-30px;left:-10px;z-index:0;pointer-events:none;user-select:none;line-height:1;}
+        .deco{font-family:'Cinzel',serif;color:rgba(0,0,0,0.06);font-size:14rem;position:fixed;bottom:-30px;left:-10px;z-index:0;pointer-events:none;user-select:none;line-height:1;}
         .dark-theme .deco{color:rgba(255,255,255,0.03);}
         
         .app{display:grid;grid-template-columns:minmax(0,900px);grid-template-rows:48px 1fr;height:100vh;max-width:900px;margin:0 auto;padding:14px;gap:12px;position:relative;z-index:1;justify-content:center;}
         
         .topbar{grid-column:1/-1;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);padding-bottom:10px;}
-        .logo{font-family:'Cinzel',serif;font-size:1.5rem;color:var(--accent);letter-spacing:2px;font-weight:700;white-space:nowrap;}
+        .logo{font-family:'Cinzel',serif;font-size:.8rem;color:var(--accent);letter-spacing:2px;font-weight:700;white-space:nowrap;}
         .nav-group{display:flex;align-items:center;gap:6px;margin-left:auto;}
         .nav { display: flex; align-items: center; justify-content: center; gap: 15px; font-size: 0.9rem; color: #7f8c8d; flex: 1; }
         .date-nav{display:flex;align-items:center;gap:5px;}
@@ -116,7 +116,7 @@
         .ring-bg{fill:none;stroke:rgba(255,255,255,0.08);stroke-width:8}
         .ring-progress{fill:none;stroke:var(--accent);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .35s linear}
         @keyframes ringPulse{0%{transform:scale(1)}50%{transform:scale(1.04)}100%{transform:scale(1)}}
-        .timer-ring-inner{position:absolute;left:10.5%;top:10.5%;width:79%;height:79%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Cinzel',serif;color:#fff;pointer-events:none;border-radius:50%;background:rgba(0,0,0,0);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
+        .timer-ring-inner{position:absolute;left:10.5%;top:10.5%;width:79%;height:79%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Cinzel',serif;color:var(--text);pointer-events:none;border-radius:50%;background:rgba(0,0,0,0);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
         .timer-ring-inner #ring-text{font-size:1.72rem;letter-spacing:1px;font-weight:700;transition:opacity .2s;}
         .timer-card.time-hidden .timer-ring-inner #ring-text{opacity:0}
 
@@ -190,10 +190,10 @@
 
     <div class="app">
         <header class="topbar">
-            <span class="logo">日程</span>
+            <span class="logo">日月</span>
             <div class="divider"></div>
             <div style="position:relative;">
-                <button class="pill-btn" onclick="toggleHelp()" id="help-btn">帮助</button>
+            <button class="pill-btn {font-weight:700;}" onclick="toggleHelp()" id="help-btn">?</button>
                 <a class="pill-btn" href="/history">历史</a>
                 <div class="help-popover" id="help-popover">
                     <h4>使用指南</h4>
@@ -484,8 +484,8 @@
 
         var timerModes={pomodoro:25*60,short:5*60,long:15*60,custom:25*60};
         var timerLabels={pomodoro:'专注 25 分钟',short:'短休 5 分钟',long:'长休 15 分钟',custom:'自定义'};
-        var currentMode=null; // only set when a pomodoro mode is chosen
-        var timerType='stopwatch'; // 'stopwatch' by default, switches to 'pomodoro' when a mode button is selected
+        var currentMode=null;
+        var timerType='stopwatch'; 
         var totalSeconds=0;
         var remaining=0;
         var elapsed=0;

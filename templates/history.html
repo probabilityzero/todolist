@@ -2,35 +2,54 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>History</title>
+    <title>History — {{ summary[0].date if summary else '' }}</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <style>
-        body{font-family:Arial,Helvetica,sans-serif;padding:24px;background:#f7f7f7}
-        .card{background:#fff;padding:12px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06);max-width:800px;margin:12px auto}
-        h1{margin:0 0 12px 0}
-        table{width:100%;border-collapse:collapse}
-        td,th{padding:8px;border-bottom:1px solid #eee;text-align:left}
-        a{color:#2c3e50;text-decoration:none}
+        /* copied minimal styles from index for consistent look */
+        *{box-sizing:border-box;outline:none;margin:0;padding:0}
+        :root{--bg:#f0ede6;--text:#3a3a3a;--card:rgba(255,255,255,0.1);--muted:#000;--accent:#2c3e50;--panel:#fff;--border:rgba(0,0,0,0.07);--shadow:rgba(0,0,0,0.06);--radius:9px}
+        body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:14px}
+        .app{max-width:900px;margin:0 auto}
+        .topbar{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:14px}
+        .logo{font-family:'Cinzel',serif;font-size:1.5rem;color:var(--accent);letter-spacing:2px;font-weight:700}
+        .pill-btn{background:none;border:1px solid var(--border);padding:4px 10px;border-radius:20px;cursor:pointer;color:var(--muted);font-size:.75rem}
+        .card{background:var(--panel);padding:16px;border-radius:12px;border:1px solid var(--border);box-shadow:0 12px 40px var(--shadow)}
+        table{width:100%;border-collapse:collapse;margin-top:8px}
+        th,td{padding:10px;border-bottom:1px solid var(--border);text-align:left}
+        a{color:var(--accent);text-decoration:none}
+        .muted{color:var(--muted)}
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>Focus History</h1>
-        <p><a href="/">Back to Today</a></p>
-        <table>
-            <thead>
-                <tr><th>Date</th><th>Total Focus</th><th></th></tr>
-            </thead>
-            <tbody>
-            {% for row in summary %}
-                <tr>
-                    <td>{{ row.date }}</td>
-                    <td>{{ row.fmt }}</td>
-                    <td><a href="/history/{{ row.date }}">Details</a></td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+    <div class="app">
+        <header class="topbar">
+            <span class="logo">日程</span>
+            <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+                <a class="pill-btn" href="/">今日</a>
+                <button class="pill-btn" onclick="location.href='/'">返回</button>
+            </div>
+        </header>
+
+        <main class="card">
+            <h2 style="margin-bottom:6px">Focus History</h2>
+            <p class="muted">按日期汇总你的专注时长。点击 Details 查看当天详情。</p>
+            <table>
+                <thead>
+                    <tr><th>Date</th><th>Total Focus</th><th></th></tr>
+                </thead>
+                <tbody>
+                {% for row in summary %}
+                    <tr>
+                        <td>{{ row.date }}</td>
+                        <td>{{ row.fmt }}</td>
+                        <td><a href="/history/{{ row.date }}">Details</a></td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="3" class="muted">No sessions recorded yet.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </main>
     </div>
 </body>
 </html>

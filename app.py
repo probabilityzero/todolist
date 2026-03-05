@@ -116,5 +116,63 @@ def edit(date, task_id):
     conn.close()
     return redirect(url_for('index', date=date))
 
+
+@app.route('/session', methods=('POST',))
+def save_session():
+    # Accept JSON payload with start,end,duration,type,mode
+    data = request.get_json() or {}
+    start = data.get('start')
+    end = data.get('end')
+    duration = int(data.get('duration') or 0)
+    s_type = data.get('type') or 'stopwatch'
+    mode = data.get('mode') or ''
+    # derive date from start timestamp (ISO)
+    try:
+        d = datetime.fromisoformat(start)
+        date = d.strftime('%Y-%m-%d')
+    except Exception:
+        date = datetime.now().strftime('%Y-%m-%d')
+    conn = get_db_connection()
+    conn.execute('INSERT INTO sessions (date, start_time, end_time, duration, type, mode) VALUES (?, ?, ?, ?, ?, ?)',
+                 (date, start, end, duration, s_type, mode))
+    conn.commit()
+    conn.close()
+    return ('', 204)
+
+
+def fmt_hms(sec):
+    h = sec // 3600
+    m = (sec % 3600) // 60
+    s = sec % 60
+    if h:
+        return f"{h}:{m:02d}:{s:02d}"
+    return f"{m:02d}:{s:02d}"
+
+
+@app.route('/history')
+def history():
+    conn = get_db_connection()
+    rows = conn.execute('SELECT date, SUM(duration) as total FROM sessions GROUP BY date ORDER BY date DESC').fetchall()
+    conn.close()
+    summary = []
+    for r in rows:
+        total = r['total'] or 0
+        summary.append({'date': r['date'], 'total': total, 'fmt': fmt_hms(total)})
+    return render_template('history.html', summary=summary)
+
+
+@app.route('/history/<date>')
+def history_day(date):
+    conn = get_db_connection()
+    sessions = conn.execute('SELECT * FROM sessions WHERE date = ? ORDER BY start_time ASC', (date,)).fetchall()
+    conn.close()
+    sess_list = []
+    for s in sessions:
+        sess_list.append({
+            'id': s['id'], 'start': s['start_time'], 'end': s['end_time'], 'duration': s['duration'], 'type': s['type'], 'mode': s['mode'], 'fmt': fmt_hms(s['duration'])
+        })
+    total = sum(s['duration'] for s in sess_list)
+    return render_template('history_day.html', date=date, sessions=sess_list, total=total, fmt_total=fmt_hms(total))
+
 if __name__ == '__main__':
     app.run(debug=True)

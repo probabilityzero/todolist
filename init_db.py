@@ -30,5 +30,20 @@ for col, definition in defs.items():
 
 cursor.execute('CREATE INDEX IF NOT EXISTS idx_tasks_date ON tasks(date)')
 
+# sessions: store timer/stopwatch focused sessions
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL,
+    start_time TEXT NOT NULL,
+    end_time TEXT NOT NULL,
+    duration INTEGER NOT NULL,
+    type TEXT,
+    mode TEXT
+)
+""")
+
+cursor.execute('CREATE INDEX IF NOT EXISTS idx_sessions_date ON sessions(date)')
+
 connection.commit()
 connection.close()

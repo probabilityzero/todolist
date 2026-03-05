@@ -194,6 +194,7 @@
             <div class="divider"></div>
             <div style="position:relative;">
                 <button class="pill-btn" onclick="toggleHelp()" id="help-btn">帮助</button>
+                <a class="pill-btn" href="/history">历史</a>
                 <div class="help-popover" id="help-popover">
                     <h4>使用指南</h4>
                     <p>点击任务文字即可编辑，圆圈标记完成。</p>
@@ -246,11 +247,11 @@
                             <circle class="ring-progress" id="ring-progress" cx="70" cy="70" r="60" transform="rotate(-90 70 70)" stroke-dasharray="377" stroke-dashoffset="377"></circle>
                         </svg>
                         <div class="timer-ring-inner">
-                            <div id="ring-text">25:00</div>
+                            <div id="ring-text"></div>
                         </div>
                     </div>
                     <div class="tc-right" id="tc-right">
-                        <button class="timer-mode active" onclick="setMode('pomodoro',this)">番茄</button>
+                        <button class="timer-mode" onclick="setMode('pomodoro',this)">番茄</button>
                         <button class="timer-mode" onclick="setMode('short',this)">短休</button>
                         <button class="timer-mode" onclick="setMode('long',this)">长休</button>
                         <button class="timer-mode" onclick="setMode('custom',this)">自定</button>
@@ -483,13 +484,14 @@
 
         var timerModes={pomodoro:25*60,short:5*60,long:15*60,custom:25*60};
         var timerLabels={pomodoro:'专注 25 分钟',short:'短休 5 分钟',long:'长休 15 分钟',custom:'自定义'};
-        var currentMode='pomodoro';
-        var totalSeconds=timerModes[currentMode];
-        var remaining=totalSeconds;
+        var currentMode=null; // only set when a pomodoro mode is chosen
+        var timerType='stopwatch'; // 'stopwatch' by default, switches to 'pomodoro' when a mode button is selected
+        var totalSeconds=0;
+        var remaining=0;
+        var elapsed=0;
         var timerInterval=null;
         var timerRunning=false;
         var displayEl=document.getElementById('ring-text');
-        var startBtn=document.getElementById('timer-start');
         var ringProgress=document.getElementById('ring-progress');
         var timerRing=document.getElementById('timer-ring');
         var timerCard=document.getElementById('timer-card');
@@ -497,30 +499,53 @@
         var playpauseText=document.getElementById('playpause-text');
         var ringResetLeft = document.getElementById('ring-reset-left');
         var hideTimeCheckboxLeft = document.getElementById('hide-time-checkbox-left');
+        var sessionStart = null;
 
-        function formatTime(s){var m=Math.floor(s/60),sec=s%60;return m.toString().padStart(2,'0')+':'+sec.toString().padStart(2,'0');}
+        function formatTime(s){
+            var h = Math.floor(s/3600);
+            var m = Math.floor((s%3600)/60);
+            var sec = s%60;
+            if(h>0) return h+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+            return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+        }
         function updateRing(){
-            if(!ringProgress || !totalSeconds) return;
-            var r = 60;
-            var c = 2 * Math.PI * r;
-            var progress = (totalSeconds - remaining) / totalSeconds;
-            var offset = Math.round((1 - progress) * c);
-            ringProgress.style.strokeDasharray = c;
-            ringProgress.style.strokeDashoffset = offset;
+                if(!ringProgress) return;
+                var r = 60;
+                var c = 2 * Math.PI * r;
+                // Only show progress for pomodoro while it's running
+                if(timerType==='pomodoro' && timerRunning && totalSeconds){
+                    var progress = (totalSeconds - remaining) / totalSeconds;
+                    var offset = Math.round((1 - progress) * c);
+                    ringProgress.style.strokeDasharray = c;
+                    ringProgress.style.strokeDashoffset = offset;
+                } else {
+                    // otherwise keep ring empty
+                    ringProgress.style.strokeDasharray = c;
+                    ringProgress.style.strokeDashoffset = c;
+                }
         }
         function renderTimer(){
-            if(displayEl) displayEl.textContent = formatTime(remaining);
-            updateRing();
+                if(!displayEl) return;
+                // Only show time while a session is running
+                if(!timerRunning){
+                    displayEl.textContent = '';
+                } else {
+                    if(timerType==='pomodoro') displayEl.textContent = formatTime(remaining);
+                    else displayEl.textContent = formatTime(elapsed);
+                }
+                updateRing();
         }
         function setMode(mode,btn){
+            // switch to pomodoro behaviour
             resetTimer();
             document.querySelectorAll('.timer-mode').forEach(function(b){b.classList.remove('active');});
             btn.classList.add('active');
             currentMode=mode;
+            timerType='pomodoro';
             if(mode==='custom'){
                 var v=prompt('输入分钟数:','25');
                 var n=parseInt(v);
-                if(!n||n<1)return;
+                if(!n||n<1) return;
                 timerModes.custom=n*60;
                 timerLabels.custom='自定义 '+n+' 分钟';
             }
@@ -534,59 +559,83 @@
             else timerCard.classList.remove('time-hidden');
         }); }
         
+        function sendSession(startISO, endISO, durationSec, s_type, mode){
+            try{
+                fetch('/session',{
+                    method:'POST',headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({start: startISO, end: endISO, duration: durationSec, type: s_type, mode: mode})
+                }).catch(function(e){console.warn('save session failed',e);});
+            }catch(e){console.warn(e);}
+        }
+
         function toggleTimer(){
             if(timerRunning){
-                // pause
+                // stop / pause
                 clearInterval(timerInterval);
-                timerInterval = null;
-                timerRunning = false;
-                if(startBtn) startBtn.classList.remove('running');
-                if(startBtn) startBtn.textContent = '开始';
+                timerInterval=null;
+                timerRunning=false;
                 if(timerRing) timerRing.classList.remove('running');
                 if(timerCard) timerCard.classList.remove('timer-active');
                 if(playpauseIcon) playpauseIcon.innerHTML = '<path d="M6 4l12 8-12 8V4z" />';
                 if(playpauseText) playpauseText.textContent = '开始';
-            }else{
+                var endISO = new Date().toISOString();
+                var duration = 0;
+                if(timerType==='pomodoro'){
+                    duration = Math.max(0, totalSeconds - remaining);
+                } else {
+                    duration = elapsed;
+                }
+                if(sessionStart && duration>0){
+                    sendSession(sessionStart, endISO, duration, timerType, currentMode||'');
+                }
+            } else {
                 // start
-                if(remaining <= 0) remaining = totalSeconds;
-                timerRunning = true;
-                if(startBtn) startBtn.classList.add('running');
-                if(startBtn) startBtn.textContent = '暂停';
+                sessionStart = new Date().toISOString();
+                timerRunning=true;
                 if(timerRing) timerRing.classList.add('running');
                 if(timerCard) timerCard.classList.add('timer-active');
                 if(playpauseIcon) playpauseIcon.innerHTML = '<path d="M6 4h4v16H6zM14 4h4v16h-4z" />';
                 if(playpauseText) playpauseText.textContent = '暂停';
-                timerInterval = setInterval(function(){
-                    remaining -= 1;
-                    if(remaining <= 0){
-                        clearInterval(timerInterval);
-                        timerInterval = null;
-                        timerRunning = false;
-                        if(startBtn) startBtn.classList.remove('running');
-                        if(startBtn) startBtn.textContent = '开始';
-                        if(timerRing) timerRing.classList.remove('running');
-                        if(timerCard) timerCard.classList.remove('timer-active');
-                        if(playpauseIcon) playpauseIcon.innerHTML = '<path d="M6 4l12 8-12 8V4z" />';
-                        if(playpauseText) playpauseText.textContent = '开始';
-                        remaining = 0;
+                if(timerType==='pomodoro'){
+                    if(remaining<=0) remaining=totalSeconds;
+                    timerInterval = setInterval(function(){
+                        remaining -= 1;
+                        if(remaining <= 0){
+                            clearInterval(timerInterval); timerInterval=null; timerRunning=false;
+                            if(timerRing) timerRing.classList.remove('running');
+                            if(timerCard) timerCard.classList.remove('timer-active');
+                            if(playpauseIcon) playpauseIcon.innerHTML = '<path d="M6 4l12 8-12 8V4z" />';
+                            if(playpauseText) playpauseText.textContent = '开始';
+                            remaining = 0; renderTimer();
+                            // finished - log full pomodoro
+                            var endISO = new Date().toISOString();
+                            var duration = totalSeconds;
+                            if(sessionStart){ sendSession(sessionStart, endISO, duration, 'pomodoro', currentMode||''); }
+                            // auto-reset after short delay
+                            setTimeout(function(){ remaining = totalSeconds; renderTimer(); }, 800);
+                            return;
+                        }
                         renderTimer();
-                        // timer finished: reset remaining to totalSeconds for next run
-                        setTimeout(function(){ remaining = totalSeconds; renderTimer(); }, 800);
-                        return;
-                    }
-                    renderTimer();
-                },1000);
+                    },1000);
+                } else {
+                    // stopwatch
+                    if(!elapsed) elapsed = 0;
+                    timerInterval = setInterval(function(){
+                        elapsed += 1; renderTimer();
+                    },1000);
+                }
             }
         }
 
         function resetTimer(){
-            clearInterval(timerInterval);
-            timerInterval = null;
-            timerRunning = false;
-            if(startBtn) startBtn.classList.remove('running');
-            if(startBtn) startBtn.textContent = '开始';
+            clearInterval(timerInterval); timerInterval=null; timerRunning=false;
             if(timerRing) timerRing.classList.remove('running');
-            remaining = totalSeconds;
+            if(timerType==='pomodoro'){
+                remaining = totalSeconds;
+            } else {
+                elapsed = 0;
+            }
+            sessionStart = null;
             renderTimer();
         }
         function toggleHelp(){
